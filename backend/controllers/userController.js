@@ -14,5 +14,9 @@ exports.updateUser = (req, res) => {
 exports.deleteUser = (req, res) => {
  const { id } = req.params;
  users = users.filter(u => u.id != id);
+<<<<<<< HEAD
  res.json({ message: "User deleted" });
 };
+=======
+ r
+>>>>>>> 7bd3716efe8b17ca4907bac89a574f582add9748
