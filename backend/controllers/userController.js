@@ -1,5 +1,17 @@
 let users = []; // mảng tạm nếu chưa dùng MongoDB
 
+// GET: lấy danh sách users
+exports.getUsers = (req, res) => {
+  res.json(users);
+};
+
+// POST: tạo user
+exports.createUser = (req, res) => {
+  const newUser = { id: Date.now().toString(), ...req.body };
+  users.push(newUser);
+  res.status(201).json(newUser);
+};
+
 // PUT: sửa user
 exports.updateUser = (req, res) => {
   const { id } = req.params;

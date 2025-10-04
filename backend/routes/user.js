@@ -8,3 +8,4 @@ router.put('/users/:id', userController.updateUser); // PUT
 router.delete('/users/:id', userController.deleteUser); // DELETE
 
 module.exports = router;
+
