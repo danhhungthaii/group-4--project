@@ -90,10 +90,7 @@ const userSchema = new mongoose.Schema({
     timestamps: true // Tự động thêm createdAt và updatedAt
 });
 
-// Indexes cho tìm kiếm nhanh
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
-userSchema.index({ role: 1 });
+// Indexes được tạo tự động từ unique: true trong schema definition
 
 // Virtual field để check nếu account bị lock
 userSchema.virtual('isLocked').get(function() {

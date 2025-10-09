@@ -35,8 +35,7 @@ const roleSchema = new mongoose.Schema({
     timestamps: true // Tự động thêm createdAt và updatedAt
 });
 
-// Index cho tìm kiếm nhanh
-roleSchema.index({ name: 1 });
+// Index được tạo tự động từ unique: true trong schema definition
 
 // Tạo model từ schema
 const Role = mongoose.model('Role', roleSchema);

@@ -5,37 +5,25 @@ const DB_CONFIG = {
     development: {
         uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/group4_database_dev',
         options: {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             maxPoolSize: 10, // Maintain up to 10 socket connections
             serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
             socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-            bufferMaxEntries: 0,
-            bufferCommands: false,
         }
     },
     production: {
         uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/group4_database_prod',
         options: {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             maxPoolSize: 100,
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
-            bufferMaxEntries: 0,
-            bufferCommands: false,
         }
     },
     test: {
         uri: process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/group4_database_test',
         options: {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             maxPoolSize: 5,
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
-            bufferMaxEntries: 0,
-            bufferCommands: false,
         }
     }
 };
