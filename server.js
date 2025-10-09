@@ -192,6 +192,200 @@ app.delete('/roles/:id', async (req, res) => {
 });
 
 // =============================================================================
+// PROFILE MANAGEMENT ROUTES
+// =============================================================================
+
+// Route GET - Xem thông tin profile của user hiện tại
+app.get('/profile/:userId', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId)
+            .populate('role', 'name description permissions')
+            .select('-password -verificationToken -resetPasswordToken -loginAttempts -lockUntil');
+            
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user profile'
+            });
+        }
+
+        // Thêm thống kê profile
+        const profileStats = {
+            accountAge: Math.floor((new Date() - user.createdAt) / (1000 * 60 * 60 * 24)), // days
+            lastLoginFormatted: user.lastLogin ? user.lastLogin.toLocaleDateString('vi-VN') : 'Chưa đăng nhập',
+            accountStatus: user.isActive ? (user.isVerified ? 'Hoạt động' : 'Chưa xác thực') : 'Bị khóa'
+        };
+
+        res.json({
+            success: true,
+            data: {
+                profile: user,
+                statistics: profileStats
+            },
+            message: 'Lấy thông tin profile thành công'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy thông tin profile',
+            error: error.message
+        });
+    }
+});
+
+// Route PUT - Cập nhật thông tin profile
+app.put('/profile/:userId', async (req, res) => {
+    try {
+        const { 
+            fullName, 
+            phoneNumber, 
+            dateOfBirth, 
+            gender, 
+            avatar 
+        } = req.body;
+
+        // Validate dữ liệu đầu vào
+        const updateData = {};
+        if (fullName) updateData.fullName = fullName;
+        if (phoneNumber) updateData.phoneNumber = phoneNumber;
+        if (dateOfBirth) updateData.dateOfBirth = new Date(dateOfBirth);
+        if (gender) updateData.gender = gender;
+        if (avatar) updateData.avatar = avatar;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.userId,
+            updateData,
+            { new: true, runValidators: true }
+        ).populate('role', 'name description permissions')
+         .select('-password -verificationToken -resetPasswordToken');
+
+        if (!updatedUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user để cập nhật'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: updatedUser,
+            message: 'Cập nhật profile thành công'
+        });
+    } catch (error) {
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(err => err.message);
+            res.status(400).json({
+                success: false,
+                message: 'Dữ liệu không hợp lệ',
+                errors: messages
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: 'Lỗi khi cập nhật profile',
+                error: error.message
+            });
+        }
+    }
+});
+
+// Route PUT - Đổi mật khẩu
+app.put('/profile/:userId/change-password', async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mật khẩu hiện tại và mật khẩu mới là bắt buộc'
+            });
+        }
+
+        const user = await User.findById(req.params.userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user'
+            });
+        }
+
+        // Kiểm tra mật khẩu hiện tại
+        const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+        if (!isCurrentPasswordValid) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mật khẩu hiện tại không đúng'
+            });
+        }
+
+        // Cập nhật mật khẩu mới
+        user.password = newPassword;
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Đổi mật khẩu thành công'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi đổi mật khẩu',
+            error: error.message
+        });
+    }
+});
+
+// Route GET - Lịch sử hoạt động profile (mock data)
+app.get('/profile/:userId/activity', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user'
+            });
+        }
+
+        // Mock activity data (trong thực tế sẽ từ activity log table)
+        const activities = [
+            {
+                action: 'profile_update',
+                description: 'Cập nhật thông tin cá nhân',
+                timestamp: user.updatedAt,
+                status: 'success'
+            },
+            {
+                action: 'account_created',
+                description: 'Tạo tài khoản',
+                timestamp: user.createdAt,
+                status: 'success'
+            }
+        ];
+
+        if (user.lastLogin) {
+            activities.unshift({
+                action: 'login',
+                description: 'Đăng nhập hệ thống',
+                timestamp: user.lastLogin,
+                status: 'success'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
+            message: 'Lấy lịch sử hoạt động thành công'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy lịch sử hoạt động',
+            error: error.message
+        });
+    }
+});
+
+// =============================================================================
 // USER ROUTES
 // =============================================================================
 

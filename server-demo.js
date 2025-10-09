@@ -36,6 +36,9 @@ const mockUsers = [
         email: 'admin@group4.com',
         fullName: 'System Administrator',
         phoneNumber: '0123456789',
+        dateOfBirth: new Date('1990-01-15'),
+        gender: 'male',
+        avatar: 'https://via.placeholder.com/150/0066CC/FFFFFF?text=AD',
         role: {
             _id: '507f1f77bcf86cd799439011',
             name: 'admin',
@@ -45,15 +48,19 @@ const mockUsers = [
         isActive: true,
         isVerified: true,
         loginAttempts: 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        lastLogin: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365), // 1 year ago
+        updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2) // 2 hours ago
     },
     {
         _id: '507f1f77bcf86cd799439022',
         username: 'testuser',
         email: 'user@group4.com',
-        fullName: 'Test User',
+        fullName: 'Nguyễn Văn Test',
         phoneNumber: '0987654321',
+        dateOfBirth: new Date('1995-06-20'),
+        gender: 'male',
+        avatar: 'https://via.placeholder.com/150/009900/FFFFFF?text=TV',
         role: {
             _id: '507f1f77bcf86cd799439012',
             name: 'user',
@@ -63,8 +70,31 @@ const mockUsers = [
         isActive: true,
         isVerified: true,
         loginAttempts: 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        lastLogin: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 180), // 6 months ago
+        updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24) // 1 day ago
+    },
+    {
+        _id: '507f1f77bcf86cd799439023',
+        username: 'moderator',
+        email: 'mod@group4.com',
+        fullName: 'Trần Thị Moderator',
+        phoneNumber: '0111222333',
+        dateOfBirth: new Date('1992-03-10'),
+        gender: 'female',
+        avatar: 'https://via.placeholder.com/150/FF6600/FFFFFF?text=TM',
+        role: {
+            _id: '507f1f77bcf86cd799439013',
+            name: 'moderator',
+            description: 'Người kiểm duyệt',
+            permissions: ['read_users', 'write_users', 'read_posts', 'write_posts', 'delete_posts']
+        },
+        isActive: true,
+        isVerified: true,
+        loginAttempts: 0,
+        lastLogin: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 90), // 3 months ago
+        updatedAt: new Date(Date.now() - 1000 * 60 * 30) // 30 minutes ago
     }
 ];
 
@@ -118,6 +148,124 @@ app.post('/roles', (req, res) => {
         success: true,
         data: newRole,
         message: '[DEMO] Tạo role thành công'
+    });
+});
+
+// =============================================================================
+// PROFILE MANAGEMENT ROUTES
+// =============================================================================
+
+app.get('/profile/:userId', (req, res) => {
+    const user = mockUsers.find(u => u._id === req.params.userId);
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: '[DEMO] Không tìm thấy user profile'
+        });
+    }
+    
+    const profileStats = {
+        accountAge: Math.floor((new Date() - user.createdAt) / (1000 * 60 * 60 * 24)),
+        lastLoginFormatted: user.lastLogin ? user.lastLogin.toLocaleDateString('vi-VN') : 'Chưa đăng nhập',
+        accountStatus: user.isActive ? (user.isVerified ? 'Hoạt động' : 'Chưa xác thực') : 'Bị khóa'
+    };
+
+    res.json({
+        success: true,
+        data: {
+            profile: user,
+            statistics: profileStats
+        },
+        message: '[DEMO] Lấy thông tin profile thành công'
+    });
+});
+
+app.put('/profile/:userId', (req, res) => {
+    const userIndex = mockUsers.findIndex(u => u._id === req.params.userId);
+    if (userIndex === -1) {
+        return res.status(404).json({
+            success: false,
+            message: '[DEMO] Không tìm thấy user để cập nhật'
+        });
+    }
+    
+    const { fullName, phoneNumber, dateOfBirth, gender, avatar } = req.body;
+    
+    // Update user data
+    if (fullName) mockUsers[userIndex].fullName = fullName;
+    if (phoneNumber) mockUsers[userIndex].phoneNumber = phoneNumber;
+    if (dateOfBirth) mockUsers[userIndex].dateOfBirth = new Date(dateOfBirth);
+    if (gender) mockUsers[userIndex].gender = gender;
+    if (avatar) mockUsers[userIndex].avatar = avatar;
+    
+    mockUsers[userIndex].updatedAt = new Date();
+    
+    res.json({
+        success: true,
+        data: mockUsers[userIndex],
+        message: '[DEMO] Cập nhật profile thành công'
+    });
+});
+
+app.put('/profile/:userId/change-password', (req, res) => {
+    const user = mockUsers.find(u => u._id === req.params.userId);
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: '[DEMO] Không tìm thấy user'
+        });
+    }
+    
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({
+            success: false,
+            message: '[DEMO] Mật khẩu hiện tại và mật khẩu mới là bắt buộc'
+        });
+    }
+    
+    // Mock password validation (always success in demo)
+    res.json({
+        success: true,
+        message: '[DEMO] Đổi mật khẩu thành công'
+    });
+});
+
+app.get('/profile/:userId/activity', (req, res) => {
+    const user = mockUsers.find(u => u._id === req.params.userId);
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: '[DEMO] Không tìm thấy user'
+        });
+    }
+    
+    const activities = [
+        {
+            action: 'profile_update',
+            description: 'Cập nhật thông tin cá nhân',
+            timestamp: user.updatedAt,
+            status: 'success'
+        },
+        {
+            action: 'login',
+            description: 'Đăng nhập hệ thống',
+            timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+            status: 'success'
+        },
+        {
+            action: 'account_created',
+            description: 'Tạo tài khoản',
+            timestamp: user.createdAt,
+            status: 'success'
+        }
+    ];
+    
+    res.json({
+        success: true,
+        data: activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
+        message: '[DEMO] Lấy lịch sử hoạt động thành công'
     });
 });
 
@@ -254,6 +402,12 @@ app.get('/', (req, res) => {
             'GET /users': 'Lấy tất cả users (có pagination)',
             'GET /users/:id': 'Lấy user theo ID',
             'POST /users': 'Tạo user mới',
+            
+            // Profile Management (NEW)
+            'GET /profile/:userId': 'Xem thông tin profile',
+            'PUT /profile/:userId': 'Cập nhật profile',
+            'PUT /profile/:userId/change-password': 'Đổi mật khẩu',
+            'GET /profile/:userId/activity': 'Lịch sử hoạt động',
             
             // Utility endpoints
             'GET /status': 'Trạng thái hệ thống',
