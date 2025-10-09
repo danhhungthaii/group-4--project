@@ -1,1 +1,0 @@
-git add . && git commit -m "feat: Profile Management complete" && git checkout -b frontend-profile && git checkout Database && git merge frontend-profile && git log --oneline -3
