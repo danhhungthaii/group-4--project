@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "demo": "node server-demo.js",
+    "frontend": "node frontend-server.js",
     "demo:server": "node server-demo.js",
     "demo:features": "node demo.js",
     "seed": "node database/seeder.js",
