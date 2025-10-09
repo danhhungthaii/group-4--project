@@ -15,7 +15,8 @@
     "seed:users": "node database/seeder.js users",
     "seed:clear": "node database/seeder.js clear",
     "test:db": "node database/test.js",
-    "test:profile": "node database/profile-test.js"
+    "test:profile": "node database/profile-test.js",
+    "test:rbac": "node database/rbac-test.js"
   },
   "dependencies": {
     "express": "^5.1.0",

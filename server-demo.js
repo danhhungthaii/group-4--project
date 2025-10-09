@@ -1,11 +1,98 @@
 const express = require('express');
 require('dotenv').config();
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// JWT Secret for demo
+const JWT_SECRET = 'demo-secret-key';
+
 // Middleware để parse JSON
 app.use(express.json());
+
+// =============================================================================
+// AUTHENTICATION MIDDLEWARE (Demo Mode)
+// =============================================================================
+
+// Demo authentication middleware
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: 'Access token required'
+        });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = mockUsers.find(u => u._id === decoded.userId);
+        
+        if (!user || !user.isActive) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid or inactive user'
+            });
+        }
+
+        req.user = user;
+        next();
+    } catch (error) {
+        return res.status(403).json({
+            success: false,
+            message: 'Invalid or expired token'
+        });
+    }
+};
+
+// Role-based access control middleware
+const requireRole = (...allowedRoles) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Authentication required'
+            });
+        }
+
+        const userRole = req.user.role.name;
+        if (!allowedRoles.includes(userRole)) {
+            return res.status(403).json({
+                success: false,
+                message: `Access denied. Required roles: ${allowedRoles.join(', ')}. Your role: ${userRole}`
+            });
+        }
+
+        next();
+    };
+};
+
+const requireAdmin = requireRole('admin');
+
+const requireSelfOrAdmin = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({
+            success: false,
+            message: 'Authentication required'
+        });
+    }
+
+    const isAdmin = req.user.role.name === 'admin';
+    const isSelf = req.user._id === req.params.userId || req.user._id === req.params.id;
+
+    if (!isAdmin && !isSelf) {
+        return res.status(403).json({
+            success: false,
+            message: 'Access denied. You can only manage your own account or need admin privileges'
+        });
+    }
+
+    next();
+};
 
 // Mock data
 const mockRoles = [
@@ -100,6 +187,96 @@ const mockUsers = [
 
 console.log('🚀 DEMO MODE: Server đang chạy với mock data (không cần MongoDB)');
 console.log('📊 Database schema được demo với dữ liệu mẫu');
+
+// =============================================================================
+// AUTHENTICATION ROUTES (Demo Mode)
+// =============================================================================
+
+// Login endpoint for demo
+app.post('/auth/login', (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({
+            success: false,
+            message: 'Username và password là bắt buộc'
+        });
+    }
+
+    // Demo credentials
+    const validCredentials = {
+        'admin': 'admin123',
+        'manager': 'manager123', 
+        'user': 'user123'
+    };
+
+    if (!validCredentials[username] || validCredentials[username] !== password) {
+        return res.status(401).json({
+            success: false,
+            message: 'Username hoặc password không chính xác'
+        });
+    }
+
+    // Find user in mock data
+    const user = mockUsers.find(u => u.username === username);
+    if (!user || !user.isActive) {
+        return res.status(401).json({
+            success: false,
+            message: 'Tài khoản không tồn tại hoặc đã bị khóa'
+        });
+    }
+
+    // Create JWT token
+    const token = jwt.sign(
+        {
+            userId: user._id,
+            username: user.username,
+            role: user.role.name
+        },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+    );
+
+    // Update last login (in real app, this would be saved to database)
+    user.lastLogin = new Date();
+
+    res.json({
+        success: true,
+        data: {
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                fullName: user.fullName,
+                role: user.role,
+                isActive: user.isActive,
+                isVerified: user.isVerified,
+                lastLogin: user.lastLogin
+            },
+            token: token
+        },
+        message: 'Đăng nhập thành công (Demo Mode)'
+    });
+});
+
+// Verify token endpoint
+app.post('/auth/verify', authenticateToken, (req, res) => {
+    res.json({
+        success: true,
+        data: {
+            user: {
+                _id: req.user._id,
+                username: req.user.username,
+                email: req.user.email,
+                fullName: req.user.fullName,
+                role: req.user.role,
+                isActive: req.user.isActive,
+                isVerified: req.user.isVerified
+            }
+        },
+        message: 'Token valid (Demo Mode)'
+    });
+});
 
 // =============================================================================
 // ROLE ROUTES
@@ -273,7 +450,7 @@ app.get('/profile/:userId/activity', (req, res) => {
 // USER ROUTES
 // =============================================================================
 
-app.get('/users', (req, res) => {
+app.get('/users', authenticateToken, requireAdmin, (req, res) => {
     const { page = 1, limit = 10 } = req.query;
     
     res.json({
@@ -289,7 +466,7 @@ app.get('/users', (req, res) => {
     });
 });
 
-app.get('/users/:id', (req, res) => {
+app.get('/users/:id', authenticateToken, requireSelfOrAdmin, (req, res) => {
     const user = mockUsers.find(u => u._id === req.params.id);
     if (!user) {
         return res.status(404).json({
@@ -305,7 +482,7 @@ app.get('/users/:id', (req, res) => {
     });
 });
 
-app.post('/users', (req, res) => {
+app.post('/users', authenticateToken, requireAdmin, (req, res) => {
     const { username, email, fullName, phoneNumber, role } = req.body;
     
     const roleObj = mockRoles.find(r => r._id === role || r.name === role);
@@ -430,6 +607,147 @@ app.get('/', (req, res) => {
             '3. Run: npm run seed (with real database)',
             '4. Run: npm start (connect to real database)'
         ]
+    });
+});
+
+// =============================================================================
+// ADMIN MANAGEMENT ROUTES (Demo Mode)
+// =============================================================================
+
+// Admin dashboard statistics
+app.get('/admin/dashboard', authenticateToken, requireAdmin, (req, res) => {
+    const totalUsers = mockUsers.length;
+    const activeUsers = mockUsers.filter(u => u.isActive).length;
+    const totalRoles = mockRoles.length;
+    
+    const usersByRole = mockRoles.map(role => {
+        const usersWithRole = mockUsers.filter(u => u.role.name === role.name);
+        return {
+            _id: role.name,
+            count: usersWithRole.length,
+            activeCount: usersWithRole.filter(u => u.isActive).length
+        };
+    });
+
+    res.json({
+        success: true,
+        data: {
+            overview: {
+                totalUsers,
+                activeUsers,
+                inactiveUsers: totalUsers - activeUsers,
+                totalRoles,
+                recentUsers: 1 // Mock data
+            },
+            usersByRole,
+            systemInfo: {
+                uptime: process.uptime(),
+                timestamp: new Date().toISOString(),
+                mode: 'DEMO'
+            }
+        },
+        message: '[DEMO] Admin dashboard statistics retrieved successfully'
+    });
+});
+
+// Toggle user status (demo)
+app.put('/admin/users/:id/toggle-status', authenticateToken, requireAdmin, (req, res) => {
+    const user = mockUsers.find(u => u._id === req.params.id);
+    
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: 'User not found'
+        });
+    }
+
+    // Prevent admin from deactivating themselves
+    if (req.user._id === req.params.id) {
+        return res.status(400).json({
+            success: false,
+            message: 'Không thể thay đổi status của chính mình'
+        });
+    }
+
+    user.isActive = !user.isActive;
+
+    res.json({
+        success: true,
+        data: user,
+        message: `[DEMO] Đã ${user.isActive ? 'kích hoạt' : 'vô hiệu hóa'} tài khoản thành công`
+    });
+});
+
+// Change user role (demo)
+app.put('/admin/users/:id/role', authenticateToken, requireAdmin, (req, res) => {
+    const { roleId } = req.body;
+    const user = mockUsers.find(u => u._id === req.params.id);
+    const role = mockRoles.find(r => r._id === roleId);
+
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: 'User not found'
+        });
+    }
+
+    if (!role) {
+        return res.status(400).json({
+            success: false,
+            message: 'Role not found'
+        });
+    }
+
+    // Prevent admin from changing their own role
+    if (req.user._id === req.params.id) {
+        return res.status(400).json({
+            success: false,
+            message: 'Không thể thay đổi role của chính mình'
+        });
+    }
+
+    user.role = {
+        _id: role._id,
+        name: role.name,
+        description: role.description,
+        permissions: role.permissions
+    };
+
+    res.json({
+        success: true,
+        data: user,
+        message: `[DEMO] Đã cập nhật role thành ${role.name} thành công`
+    });
+});
+
+// Bulk delete users (demo)
+app.post('/admin/users/bulk-delete', authenticateToken, requireAdmin, (req, res) => {
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds)) {
+        return res.status(400).json({
+            success: false,
+            message: 'userIds array is required'
+        });
+    }
+
+    // Prevent deleting current admin
+    if (userIds.includes(req.user._id)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Không thể xóa tài khoản admin hiện tại'
+        });
+    }
+
+    // In demo mode, we just simulate deletion
+    const deletedCount = userIds.length;
+
+    res.json({
+        success: true,
+        data: {
+            deletedCount
+        },
+        message: `[DEMO] Simulation: Đã xóa ${deletedCount} user(s) thành công`
     });
 });
 

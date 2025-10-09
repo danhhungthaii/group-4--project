@@ -16,6 +16,10 @@ app.get('/profile', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'profile-management.html'));
 });
 
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'admin-panel.html'));
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`🌐 Frontend Server running at http://localhost:${PORT}`);
