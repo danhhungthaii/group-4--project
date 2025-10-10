@@ -30,20 +30,12 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpires = resetTokenExpiry;
     await user.save();
 
-    // Gửi email
-    const emailResult = await sendResetPasswordEmail(email, resetToken);
+    // Gửi email (tạm thời disabled để demo)
+    console.log('📧 Email would be sent to:', email);
+    console.log('🔑 Reset token:', resetToken);
     
-    if (!emailResult.success) {
-      // Xóa token nếu gửi email thất bại
-      user.resetPasswordToken = null;
-      user.resetPasswordExpires = null;
-      await user.save();
-      
-      return res.status(500).json({ 
-        message: 'Không thể gửi email. Vui lòng thử lại sau.',
-        error: emailResult.error 
-      });
-    }
+    // TODO: Enable email sending later
+    // const emailResult = await sendResetPasswordEmail(email, resetToken);
 
     res.json({
       message: 'Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư của bạn.',
