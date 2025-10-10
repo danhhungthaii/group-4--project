@@ -3,18 +3,30 @@ const nodemailer = require('nodemailer');
 
 // Tạo transporter cho Gmail
 const createTransporter = () => {
-  return nodemailer.createTransporter({
-    service: 'gmail',
+  console.log('Creating nodemailer transporter...');
+  console.log('Nodemailer version:', require('nodemailer/package.json').version);
+  
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS // App password, không phải password thường
+      pass: process.env.EMAIL_PASS
     }
   });
+  
+  return transporter;
 };
 
 // Gửi email reset password
 const sendResetPasswordEmail = async (email, resetToken) => {
   try {
+    console.log('📧 Email Config:');
+    console.log('EMAIL_USER:', process.env.EMAIL_USER);
+    console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? '***set***' : 'NOT SET');
+    console.log('EMAIL_FROM:', process.env.EMAIL_FROM);
+    
     const transporter = createTransporter();
     
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
