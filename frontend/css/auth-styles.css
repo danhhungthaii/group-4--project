@@ -1,0 +1,303 @@
+/* Frontend Authentication Styles */
+
+/* Reset password page styles */
+.reset-password-container {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.reset-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.reset-header h1 {
+    color: #333;
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.reset-header p {
+    color: #666;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Form validation styles */
+.form-group.error input {
+    border-color: #e74c3c;
+}
+
+.form-group.success input {
+    border-color: #27ae60;
+}
+
+.validation-message {
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
+
+.validation-message.error {
+    color: #e74c3c;
+    display: block;
+}
+
+.validation-message.success {
+    color: #27ae60;
+    display: block;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Button loading state */
+.login-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Password strength indicator */
+.password-strength {
+    margin-top: 5px;
+    height: 4px;
+    background: #e1e1e1;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.password-strength-bar {
+    height: 100%;
+    transition: all 0.3s ease;
+    width: 0%;
+}
+
+.password-strength-bar.weak {
+    background: #e74c3c;
+    width: 33%;
+}
+
+.password-strength-bar.medium {
+    background: #f39c12;
+    width: 66%;
+}
+
+.password-strength-bar.strong {
+    background: #27ae60;
+    width: 100%;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .login-container,
+    .reset-password-container {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    .login-header h1,
+    .reset-header h1 {
+        font-size: 24px;
+    }
+    
+    .form-group input {
+        padding: 10px 12px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+/* Animation classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+
+/* Toast notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    color: white;
+    font-weight: 500;
+    z-index: 1000;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast.success {
+    background: #27ae60;
+}
+
+.toast.error {
+    background: #e74c3c;
+}
+
+.toast.warning {
+    background: #f39c12;
+}
+
+.toast.info {
+    background: #3498db;
+}
+
+/* Social login buttons */
+.social-login {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.social-login-divider {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+    color: #666;
+}
+
+.social-login-divider::before,
+.social-login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e1e1e1;
+}
+
+.social-login-divider span {
+    padding: 0 15px;
+    font-size: 14px;
+}
+
+.social-button {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e1e1e1;
+    border-radius: 10px;
+    background: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.social-button:hover {
+    border-color: #667eea;
+    transform: translateY(-1px);
+}
+
+.social-button.google {
+    border-color: #db4437;
+    color: #db4437;
+}
+
+.social-button.facebook {
+    border-color: #3b5998;
+    color: #3b5998;
+}
+
+/* Profile avatar upload preview */
+.avatar-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid #e1e1e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.avatar-preview:hover {
+    border-color: #667eea;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-preview .upload-icon {
+    font-size: 40px;
+    color: #ccc;
+}
+
+/* File upload styles */
+.file-upload {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.file-upload input[type="file"] {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.file-upload-label {
+    display: block;
+    padding: 12px 15px;
+    border: 2px dashed #e1e1e1;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.file-upload-label:hover {
+    border-color: #667eea;
+    background: #f0f2ff;
+}
+
+.file-upload-label.dragover {
+    border-color: #667eea;
+    background: #f0f2ff;
+    transform: scale(1.02);
+}

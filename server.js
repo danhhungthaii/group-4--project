@@ -6,6 +6,21 @@ const Role = require('./models/Role');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
+// Import Cloudinary và Email services
+const { 
+    uploadAvatar: cloudinaryUploadAvatar, 
+    uploadDocument,
+    deleteImage,
+    getOptimizedUrl,
+    validateFile 
+} = require('./config/cloudinary');
+const { 
+    sendResetPasswordEmail, 
+    sendVerificationEmail,
+    testEmailConnection 
+} = require('./config/emailService');
+const { uploadAvatar, uploadImages, uploadSingle } = require('./middleware/upload');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -1092,13 +1107,457 @@ app.get('/statistics/users-by-role', async (req, res) => {
     }
 });
 
+// =============================================================================
+// CLOUDINARY IMAGE UPLOAD ENDPOINTS
+// =============================================================================
+
+// Route POST - Upload avatar
+app.post('/users/:id/avatar', authenticateToken, requireSelfOrAdmin, uploadAvatar, async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Không có file avatar được upload'
+            });
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user'
+            });
+        }
+
+        // Upload avatar lên Cloudinary
+        const cloudinaryResult = await cloudinaryUploadAvatar(req.file.buffer, user._id);
+        
+        // Update user với avatar mới
+        await user.updateAvatar(cloudinaryResult);
+        
+        // Populate user data để trả về
+        const updatedUser = await User.findById(user._id)
+            .populate('role', 'name description permissions')
+            .select('-password -resetPasswordToken -emailVerificationToken');
+
+        res.json({
+            success: true,
+            data: {
+                user: updatedUser,
+                avatar: {
+                    url: cloudinaryResult.secure_url,
+                    publicId: cloudinaryResult.public_id,
+                    thumbnail: user.getAvatarThumbnail()
+                }
+            },
+            message: 'Upload avatar thành công'
+        });
+    } catch (error) {
+        console.error('Avatar upload error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi upload avatar',
+            error: error.message
+        });
+    }
+});
+
+// Route POST - Upload images to gallery
+app.post('/users/:id/images', authenticateToken, requireSelfOrAdmin, uploadImages, async (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Không có images được upload'
+            });
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user'
+            });
+        }
+
+        const uploadResults = [];
+        
+        // Upload từng file lên Cloudinary
+        for (let i = 0; i < req.files.length; i++) {
+            const file = req.files[i];
+            const description = req.body.descriptions ? req.body.descriptions[i] || '' : '';
+            
+            try {
+                const cloudinaryResult = await uploadDocument(file.buffer, user._id, file.originalname);
+                await user.addImage(cloudinaryResult, description);
+                
+                uploadResults.push({
+                    url: cloudinaryResult.secure_url,
+                    publicId: cloudinaryResult.public_id,
+                    description: description,
+                    originalName: file.originalname
+                });
+            } catch (uploadError) {
+                console.error(`Error uploading file ${file.originalname}:`, uploadError);
+                // Continue with other files
+            }
+        }
+
+        const updatedUser = await User.findById(user._id)
+            .populate('role', 'name description permissions')
+            .select('-password -resetPasswordToken -emailVerificationToken');
+
+        res.json({
+            success: true,
+            data: {
+                user: updatedUser,
+                uploadedImages: uploadResults,
+                totalImages: user.images.length
+            },
+            message: `Upload thành công ${uploadResults.length}/${req.files.length} images`
+        });
+    } catch (error) {
+        console.error('Images upload error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi upload images',
+            error: error.message
+        });
+    }
+});
+
+// Route DELETE - Remove image from gallery
+app.delete('/users/:userId/images/:imageId', authenticateToken, requireSelfOrAdmin, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user'
+            });
+        }
+
+        await user.removeImage(req.params.imageId);
+
+        res.json({
+            success: true,
+            data: {
+                remainingImages: user.images.length
+            },
+            message: 'Xóa image thành công'
+        });
+    } catch (error) {
+        console.error('Remove image error:', error);
+        
+        if (error.message === 'Image không tồn tại') {
+            return res.status(404).json({
+                success: false,
+                message: error.message
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi xóa image',
+            error: error.message
+        });
+    }
+});
+
+// Route GET - Get optimized avatar URL
+app.get('/users/:id/avatar/optimized', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select('avatar avatarPublicId');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user'
+            });
+        }
+
+        const { width, height, quality } = req.query;
+        const options = {};
+        
+        if (width) options.width = parseInt(width);
+        if (height) options.height = parseInt(height);
+        if (quality) options.quality = quality;
+
+        const optimizedUrl = user.getOptimizedAvatar(options);
+        const thumbnailUrl = user.getAvatarThumbnail();
+
+        res.json({
+            success: true,
+            data: {
+                original: user.avatar,
+                optimized: optimizedUrl,
+                thumbnail: thumbnailUrl,
+                publicId: user.avatarPublicId
+            },
+            message: 'Lấy avatar URLs thành công'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy avatar URLs',
+            error: error.message
+        });
+    }
+});
+
+// =============================================================================
+// PASSWORD RESET ENDPOINTS
+// =============================================================================
+
+// Route POST - Request password reset
+app.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email là bắt buộc'
+            });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            // Không tiết lộ thông tin user có tồn tại hay không (security)
+            return res.json({
+                success: true,
+                message: 'Nếu email tồn tại trong hệ thống, bạn sẽ nhận được email hướng dẫn đặt lại mật khẩu'
+            });
+        }
+
+        // Tạo reset token
+        const resetToken = user.createPasswordResetToken();
+        await user.save({ validateBeforeSave: false });
+
+        try {
+            // Gửi email reset password
+            await sendResetPasswordEmail(user.email, resetToken, user.fullName);
+
+            res.json({
+                success: true,
+                message: 'Email hướng dẫn đặt lại mật khẩu đã được gửi'
+            });
+        } catch (emailError) {
+            // Xóa reset token nếu gửi email thất bại
+            user.resetPasswordToken = null;
+            user.resetPasswordExpires = null;
+            await user.save({ validateBeforeSave: false });
+
+            console.error('Email sending error:', emailError);
+            res.status(500).json({
+                success: false,
+                message: 'Có lỗi khi gửi email. Vui lòng thử lại sau'
+            });
+        }
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi server khi xử lý yêu cầu',
+            error: error.message
+        });
+    }
+});
+
+// Route POST - Reset password with token
+app.post('/reset-password', async (req, res) => {
+    try {
+        const { token, newPassword, confirmPassword } = req.body;
+
+        if (!token || !newPassword || !confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Token, mật khẩu mới và xác nhận mật khẩu là bắt buộc'
+            });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mật khẩu mới và xác nhận mật khẩu không khớp'
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mật khẩu mới phải có ít nhất 6 ký tự'
+            });
+        }
+
+        // Tìm user với token hợp lệ
+        const crypto = require('crypto');
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const user = await User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Token không hợp lệ hoặc đã hết hạn'
+            });
+        }
+
+        // Reset password
+        await user.resetPassword(newPassword);
+
+        res.json({
+            success: true,
+            message: 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới'
+        });
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi đặt lại mật khẩu',
+            error: error.message
+        });
+    }
+});
+
+// Route POST - Resend verification email
+app.post('/resend-verification', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email là bắt buộc'
+            });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user với email này'
+            });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tài khoản đã được xác thực'
+            });
+        }
+
+        // Tạo verification token mới
+        const verificationToken = user.createEmailVerificationToken();
+        await user.save({ validateBeforeSave: false });
+
+        try {
+            await sendVerificationEmail(user.email, verificationToken, user.fullName);
+
+            res.json({
+                success: true,
+                message: 'Email xác thực đã được gửi lại'
+            });
+        } catch (emailError) {
+            console.error('Verification email error:', emailError);
+            res.status(500).json({
+                success: false,
+                message: 'Có lỗi khi gửi email xác thực'
+            });
+        }
+    } catch (error) {
+        console.error('Resend verification error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi server khi gửi lại email xác thực'
+        });
+    }
+});
+
+// Route POST - Verify email with token
+app.post('/verify-email', async (req, res) => {
+    try {
+        const { token } = req.body;
+
+        if (!token) {
+            return res.status(400).json({
+                success: false,
+                message: 'Token xác thực là bắt buộc'
+            });
+        }
+
+        const crypto = require('crypto');
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const user = await User.findOne({
+            emailVerificationToken: hashedToken,
+            emailVerificationExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Token xác thực không hợp lệ hoặc đã hết hạn'
+            });
+        }
+
+        await user.verifyEmail();
+
+        res.json({
+            success: true,
+            message: 'Xác thực email thành công'
+        });
+    } catch (error) {
+        console.error('Email verification error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi xác thực email'
+        });
+    }
+});
+
+// Route POST - Test email service connection
+app.post('/test-email', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const isConnected = await testEmailConnection();
+        
+        if (isConnected) {
+            res.json({
+                success: true,
+                message: 'Email service connection successful'
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: 'Email service connection failed'
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error testing email service',
+            error: error.message
+        });
+    }
+});
+
 // Route mặc định
 app.get('/', (req, res) => {
     res.json({
         success: true,
         message: 'Group 4 Database Authentication API Server 🚀',
-        version: '1.0.0',
+        version: '2.0.0',
         endpoints: {
+            // Authentication endpoints
+            'POST /register': 'Đăng ký user mới',
+            'POST /login': 'Đăng nhập',
+            'POST /forgot-password': 'Yêu cầu reset password',
+            'POST /reset-password': 'Reset password với token',
+            'POST /verify-email': 'Xác thực email với token',
+            'POST /resend-verification': 'Gửi lại email xác thực',
+            
             // Role endpoints
             'GET /roles': 'Lấy tất cả roles',
             'GET /roles/:id': 'Lấy role theo ID',
@@ -1113,18 +1572,29 @@ app.get('/', (req, res) => {
             'PUT /users/:id': 'Cập nhật user',
             'DELETE /users/:id': 'Xóa user',
             
+            // Image upload endpoints
+            'POST /users/:id/avatar': 'Upload avatar cho user',
+            'POST /users/:id/images': 'Upload images vào gallery',
+            'DELETE /users/:userId/images/:imageId': 'Xóa image từ gallery',
+            'GET /users/:id/avatar/optimized': 'Lấy optimized avatar URLs',
+            
             // Utility endpoints
             'GET /status': 'Trạng thái hệ thống',
-            'GET /statistics/users-by-role': 'Thống kê users theo role'
+            'GET /statistics/users-by-role': 'Thống kê users theo role',
+            'POST /test-email': 'Test email service (Admin only)'
         },
         database: {
-            schema: 'Enhanced User & Role Management',
+            schema: 'Enhanced User & Role Management with Cloudinary Integration',
             features: [
                 'User Authentication with bcrypt',
                 'Role-based permissions',
                 'Account security (login attempts, account locking)',
                 'Data validation and indexing',
-                'Comprehensive error handling'
+                'Comprehensive error handling',
+                'Cloudinary image upload & management',
+                'Email-based password reset',
+                'Email verification system',
+                'Image optimization & thumbnails'
             ]
         }
     });
