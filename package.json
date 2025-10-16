@@ -16,7 +16,9 @@
     "seed:clear": "node database/seeder.js clear",
     "test:db": "node database/test.js",
     "test:profile": "node database/profile-test.js",
-    "test:rbac": "node database/rbac-test.js"
+    "test:rbac": "node database/rbac-test.js",
+    "test:refresh-token": "node database/refresh-token-test.js",
+    "demo:refresh-token": "node database/refresh-token-demo.js"
   },
   "dependencies": {
     "express": "^5.1.0",

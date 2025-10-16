@@ -172,6 +172,29 @@ userSchema.statics.findByEmailOrUsername = function(identifier) {
     });
 };
 
+// Virtual reference đến RefreshTokens
+userSchema.virtual('refreshTokens', {
+    ref: 'RefreshToken',
+    localField: '_id',
+    foreignField: 'userId'
+});
+
+// Virtual để đếm số active refresh tokens
+userSchema.virtual('activeRefreshTokensCount', {
+    ref: 'RefreshToken',
+    localField: '_id',
+    foreignField: 'userId',
+    count: true,
+    match: { 
+        isActive: true,
+        expiresAt: { $gt: new Date() }
+    }
+});
+
+// Đảm bảo virtuals được serialize
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
+
 // Tạo model từ schema
 const User = mongoose.model('User', userSchema);
 
