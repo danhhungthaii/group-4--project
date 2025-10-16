@@ -2,10 +2,24 @@ const jwt = require('jsonwebtoken');
 
 // Temporary storage for users and refresh tokens (in production, use database)
 let users = [
-  { id: 1, username: 'admin', password: 'password123', email: 'admin@example.com' },
-  { id: 2, username: 'user1', password: 'password456', email: 'user1@example.com' }
+  { id: 1, username: 'admin', password: 'password123', email: 'admin@example.com', role: 'Admin' },
+  { id: 2, username: 'moderator', password: 'password456', email: 'moderator@example.com', role: 'Moderator' },
+  { id: 3, username: 'user1', password: 'password789', email: 'user1@example.com', role: 'User' }
 ];
 let refreshTokens = []; // Store valid refresh tokens
+
+// Define roles and their permissions
+const ROLES = {
+  ADMIN: 'Admin',
+  MODERATOR: 'Moderator', 
+  USER: 'User'
+};
+
+const PERMISSIONS = {
+  [ROLES.ADMIN]: ['READ_USERS', 'CREATE_USERS', 'UPDATE_USERS', 'DELETE_USERS', 'MANAGE_ROLES'],
+  [ROLES.MODERATOR]: ['READ_USERS', 'UPDATE_USERS'],
+  [ROLES.USER]: ['READ_PROFILE', 'UPDATE_PROFILE']
+};
 
 // JWT Secrets (in production, use environment variables)
 const ACCESS_TOKEN_SECRET = 'your-access-token-secret-key';
@@ -15,7 +29,12 @@ const REFRESH_TOKEN_EXPIRE = '7d'; // Refresh token expires in 7 days
 
 // Helper function to generate tokens
 const generateTokens = (user) => {
-  const payload = { id: user.id, username: user.username, email: user.email };
+  const payload = { 
+    id: user.id, 
+    username: user.username, 
+    email: user.email,
+    role: user.role 
+  };
   
   const accessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, {
     expiresIn: ACCESS_TOKEN_EXPIRE
@@ -66,7 +85,12 @@ exports.login = (req, res) => {
     success: true,
     message: 'Login successful',
     data: {
-      user: { id: user.id, username: user.username, email: user.email },
+      user: { 
+        id: user.id, 
+        username: user.username, 
+        email: user.email,
+        role: user.role 
+      },
       accessToken,
       refreshToken
     }
@@ -106,7 +130,12 @@ exports.refresh = (req, res) => {
     }
     
     // Generate new access token
-    const payload = { id: user.id, username: user.username, email: user.email };
+    const payload = { 
+      id: user.id, 
+      username: user.username, 
+      email: user.email,
+      role: user.role 
+    };
     const newAccessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, {
       expiresIn: ACCESS_TOKEN_EXPIRE
     });
