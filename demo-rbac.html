@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RBAC Demo - Role-Based Access Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .account-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .account-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .account-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .account-card.selected {
+            border: 2px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .role-admin { border-left: 4px solid #dc3545; }
+        .role-moderator { border-left: 4px solid #ffc107; }
+        .role-user { border-left: 4px solid #6c757d; }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .dashboard-card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .dashboard-card.admin { border-left: 4px solid #dc3545; }
+        .dashboard-card.moderator { border-left: 4px solid #ffc107; }
+        .dashboard-card.user { border-left: 4px solid #6c757d; }
+        
+        .user-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 3px solid white;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .permission-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            margin: 2px;
+            background-color: #e9ecef;
+            border-radius: 12px;
+            font-size: 11px;
+            color: #495057;
+        }
+        .permission-badge.admin { background-color: #f8d7da; color: #721c24; }
+        .permission-badge.moderator { background-color: #fff3cd; color: #856404; }
+        .permission-badge.user { background-color: #d1ecf1; color: #0c5460; }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-warning { background-color: #ffc107; color: black; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn:hover { opacity: 0.9; }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .user-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .user-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .log-container {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f8f9fa;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-warning { color: #ffc107; }
+        .log-info { color: #17a2b8; }
+        .log-time { color: #6c757d; }
+        
+        .hidden { display: none; }
+        .access-denied {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 RBAC Demo - Role-Based Access Control</h1>
+    
+    <!-- Login Section -->
+    <div id="loginSection" class="container">
+        <h3>Select Test Account & Login</h3>
+        
+        <div class="account-selector">
+            <div class="account-card role-admin" onclick="selectAccount('admin')">
+                <h4 style="color: #dc3545; margin: 0 0 10px 0;">👑 Admin</h4>
+                <p><strong>Username:</strong> admin<br><strong>Password:</strong> password123</p>
+                <p style="font-size: 12px; color: #666;">Full access - Dashboard, User CRUD, Analytics, Settings</p>
+                <div style="margin-top: 10px;">
+                    <span class="permission-badge admin">MANAGE_USERS</span>
+                    <span class="permission-badge admin">MANAGE_SETTINGS</span>
+                    <span class="permission-badge admin">VIEW_ANALYTICS</span>
+                </div>
+            </div>
+            
+            <div class="account-card role-moderator" onclick="selectAccount('moderator')">
+                <h4 style="color: #856404; margin: 0 0 10px 0;">🛡️ Moderator</h4>
+                <p><strong>Username:</strong> moderator<br><strong>Password:</strong> password456</p>
+                <p style="font-size: 12px; color: #666;">Limited management - Dashboard, View/Edit Users, Analytics</p>
+                <div style="margin-top: 10px;">
+                    <span class="permission-badge moderator">VIEW_USERS</span>
+                    <span class="permission-badge moderator">UPDATE_USER</span>
+                    <span class="permission-badge moderator">VIEW_ANALYTICS</span>
+                </div>
+            </div>
+            
+            <div class="account-card role-user" onclick="selectAccount('user1')">
+                <h4 style="color: #6c757d; margin: 0 0 10px 0;">👤 User</h4>
+                <p><strong>Username:</strong> user1<br><strong>Password:</strong> password789</p>
+                <p style="font-size: 12px; color: #666;">Basic access - Profile management only</p>
+                <div style="margin-top: 10px;">
+                    <span class="permission-badge user">VIEW_PROFILE</span>
+                    <span class="permission-badge user">UPDATE_PROFILE</span>
+                </div>
+            </div>
+        </div>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px;">
+            <h4>Login Form</h4>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="username" placeholder="Username" value="admin" style="padding: 8px; width: 150px;">
+                <input type="password" id="password" placeholder="Password" value="password123" style="padding: 8px; width: 150px;">
+                <button class="btn btn-primary" onclick="login()">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboardSection" class="hidden">
+        <!-- User Header -->
+        <div id="userHeader" class="user-header">
+            <div class="user-info">
+                <img id="userAvatar" class="avatar" src="" alt="User Avatar">
+                <div>
+                    <h3 id="userFullName" style="margin: 0 0 5px 0;"></h3>
+                    <p id="userDetails" style="margin: 0; opacity: 0.9;"></p>
+                    <div id="userPermissions" style="margin-top: 8px;"></div>
+                </div>
+            </div>
+            <button class="btn btn-danger" onclick="logout()">Logout</button>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-grid">
+            <!-- Dashboard Stats - Admin & Moderator -->
+            <div id="dashboardCard" class="dashboard-card hidden">
+                <h4 style="margin: 0 0 15px 0; color: #28a745;">📊 Dashboard</h4>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalUsers">-</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalAdmins">-</div>
+                        <div class="stat-label">Admins</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalModerators">-</div>
+                        <div class="stat-label">Moderators</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalRegularUsers">-</div>
+                        <div class="stat-label">Regular Users</div>
+                    </div>
+                </div>
+                <h5>Recent Activity:</h5>
+                <div id="recentActivity"></div>
+            </div>
+
+            <!-- User Management - Admin & Moderator -->
+            <div id="userManagementCard" class="dashboard-card hidden">
+                <h4 style="margin: 0 0 15px 0; color: #17a2b8;">👥 User Management</h4>
+                
+                <!-- Create User - Admin Only -->
+                <div id="createUserSection" class="hidden" style="background-color: #e1f5fe; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+                    <h5 style="margin: 0 0 10px 0;">Create New User (Admin Only)</h5>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <input type="text" id="newUsername" placeholder="Username">
+                        <input type="email" id="newEmail" placeholder="Email">
+                        <input type="password" id="newPassword" placeholder="Password">
+                        <input type="text" id="newFullName" placeholder="Full Name">
+                        <input type="text" id="newDepartment" placeholder="Department">
+                        <select id="newRole">
+                            <option value="User">User</option>
+                            <option value="Moderator">Moderator</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="createUser()" style="margin-top: 10px;">Create User</button>
+                </div>
+
+                <!-- Users List -->
+                <div class="user-list" id="usersList"></div>
+            </div>
+
+            <!-- Analytics - Admin & Moderator -->
+            <div id="analyticsCard" class="dashboard-card hidden">
+                <h4 style="margin: 0 0 15px 0; color: #ffc107;">📈 Analytics</h4>
+                
+                <h5>Role Distribution:</h5>
+                <div id="roleDistribution" style="margin-bottom: 15px;"></div>
+                
+                <h5>Department Stats:</h5>
+                <div id="departmentStats"></div>
+            </div>
+
+            <!-- Settings - Admin Only -->
+            <div id="settingsCard" class="dashboard-card hidden">
+                <h4 style="margin: 0 0 15px 0; color: #6f42c1;">⚙️ Settings (Admin Only)</h4>
+                <div id="settingsContent"></div>
+            </div>
+
+            <!-- Profile - All Users -->
+            <div id="profileCard" class="dashboard-card">
+                <h4 style="margin: 0 0 15px 0; color: #6c757d;">👤 My Profile</h4>
+                <div id="profileContent"></div>
+            </div>
+
+            <!-- Access Denied Messages -->
+            <div id="accessDeniedCard" class="dashboard-card hidden">
+                <div class="access-denied">
+                    <h4>🚫 Access Denied</h4>
+                    <p>You don't have permission to access advanced features.</p>
+                    <p>Current role: <strong id="currentRole"></strong></p>
+                    <p>Try logging in as Admin or Moderator to see more features.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Logs -->
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3>Activity Logs</h3>
+            <button class="btn btn-secondary" onclick="clearLogs()">Clear Logs</button>
+        </div>
+        <div id="logs" class="log-container">
+            <div class="log-info">Ready to start RBAC demo...</div>
+        </div>
+    </div>
+
+    <!-- RBAC Info -->
+    <div class="container">
+        <h4>🔐 How RBAC Works:</h4>
+        <ul>
+            <li><strong>Admin:</strong> Full access - Dashboard, User Management (CRUD), Analytics, Settings</li>
+            <li><strong>Moderator:</strong> Limited management - Dashboard, View/Edit Users, Analytics</li>
+            <li><strong>User:</strong> Basic access - Profile only</li>
+            <li>UI components are dynamically shown/hidden based on user permissions</li>
+            <li>API endpoints are protected with role-based middleware</li>
+        </ul>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let currentUser = null;
+        let accessToken = null;
+        let users = [];
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logs = document.getElementById('logs');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log-${type}`;
+            logDiv.innerHTML = `<span class="log-time">[${timestamp}]</span> ${message}`;
+            logs.appendChild(logDiv);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '<div class="log-info">Logs cleared...</div>';
+        }
+
+        function selectAccount(username) {
+            // Remove previous selection
+            document.querySelectorAll('.account-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selection to clicked card
+            event.target.closest('.account-card').classList.add('selected');
+            
+            // Update form
+            const passwords = {
+                'admin': 'password123',
+                'moderator': 'password456',
+                'user1': 'password789'
+            };
+            
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = passwords[username];
+            
+            addLog(`Selected account: ${username}`, 'info');
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                addLog(`🔐 Attempting login for ${username}...`, 'info');
+                
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentUser = data.data.user;
+                    accessToken = data.data.accessToken;
+                    
+                    addLog(`✅ Login successful as ${currentUser.role}: ${currentUser.username}`, 'success');
+                    addLog(`🔑 Permissions: ${currentUser.permissions.join(', ')}`, 'info');
+
+                    showDashboard();
+                    await loadRoleBasedData();
+                } else {
+                    addLog(`❌ Login failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addLog(`❌ Login error: ${error.message}`, 'error');
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+
+            // Update user header
+            document.getElementById('userAvatar').src = currentUser.avatar;
+            document.getElementById('userFullName').textContent = `Welcome, ${currentUser.fullName || currentUser.username}!`;
+            document.getElementById('userDetails').innerHTML = `
+                <strong>Role:</strong> ${currentUser.role} | 
+                <strong>Department:</strong> ${currentUser.department} | 
+                <strong>Email:</strong> ${currentUser.email}
+            `;
+            
+            // Show permissions
+            const permissionsDiv = document.getElementById('userPermissions');
+            permissionsDiv.innerHTML = currentUser.permissions.map(permission => 
+                `<span class="permission-badge ${currentUser.role.toLowerCase()}">${permission}</span>`
+            ).join('');
+
+            // Show/hide cards based on permissions
+            showHideCards();
+        }
+
+        function showHideCards() {
+            const hasPermission = (permission) => currentUser.permissions.includes(permission);
+
+            // Dashboard card
+            if (hasPermission('VIEW_DASHBOARD')) {
+                document.getElementById('dashboardCard').classList.remove('hidden');
+                document.getElementById('dashboardCard').className = `dashboard-card ${currentUser.role.toLowerCase()}`;
+            }
+
+            // User Management card
+            if (hasPermission('VIEW_USERS')) {
+                document.getElementById('userManagementCard').classList.remove('hidden');
+                document.getElementById('userManagementCard').className = `dashboard-card ${currentUser.role.toLowerCase()}`;
+                
+                // Create user section (Admin only)
+                if (hasPermission('CREATE_USER')) {
+                    document.getElementById('createUserSection').classList.remove('hidden');
+                }
+            }
+
+            // Analytics card
+            if (hasPermission('VIEW_ANALYTICS')) {
+                document.getElementById('analyticsCard').classList.remove('hidden');
+                document.getElementById('analyticsCard').className = `dashboard-card ${currentUser.role.toLowerCase()}`;
+            }
+
+            // Settings card (Admin only)
+            if (hasPermission('MANAGE_SETTINGS')) {
+                document.getElementById('settingsCard').classList.remove('hidden');
+                document.getElementById('settingsCard').className = `dashboard-card ${currentUser.role.toLowerCase()}`;
+            }
+
+            // Show access denied for Users
+            if (currentUser.role === 'User') {
+                document.getElementById('accessDeniedCard').classList.remove('hidden');
+                document.getElementById('currentRole').textContent = currentUser.role;
+            }
+
+            // Profile card (all users)
+            document.getElementById('profileCard').className = `dashboard-card ${currentUser.role.toLowerCase()}`;
+        }
+
+        async function loadRoleBasedData() {
+            const headers = { 'Authorization': `Bearer ${accessToken}` };
+
+            // Load dashboard data
+            if (currentUser.permissions.includes('VIEW_DASHBOARD')) {
+                try {
+                    const response = await fetch(`${API_URL}/dashboard`, { headers });
+                    const data = await response.json();
+                    if (data.success) {
+                        displayDashboardData(data.data);
+                        addLog('📊 Dashboard data loaded', 'success');
+                    }
+                } catch (error) {
+                    addLog('❌ Failed to load dashboard', 'error');
+                }
+            }
+
+            // Load users
+            if (currentUser.permissions.includes('VIEW_USERS')) {
+                try {
+                    const response = await fetch(`${API_URL}/users`, { headers });
+                    const data = await response.json();
+                    if (data.success) {
+                        users = data.data.users;
+                        displayUsers();
+                        addLog('👥 Users data loaded', 'success');
+                    }
+                } catch (error) {
+                    addLog('❌ Failed to load users', 'error');
+                }
+            }
+
+            // Load analytics
+            if (currentUser.permissions.includes('VIEW_ANALYTICS')) {
+                try {
+                    const response = await fetch(`${API_URL}/analytics`, { headers });
+                    const data = await response.json();
+                    if (data.success) {
+                        displayAnalytics(data.data);
+                        addLog('📈 Analytics data loaded', 'success');
+                    }
+                } catch (error) {
+                    addLog('❌ Failed to load analytics', 'error');
+                }
+            }
+
+            // Load settings
+            if (currentUser.permissions.includes('MANAGE_SETTINGS')) {
+                try {
+                    const response = await fetch(`${API_URL}/settings`, { headers });
+                    const data = await response.json();
+                    if (data.success) {
+                        displaySettings(data.data);
+                        addLog('⚙️ Settings loaded', 'success');
+                    }
+                } catch (error) {
+                    addLog('❌ Failed to load settings', 'error');
+                }
+            }
+
+            // Display profile
+            displayProfile();
+        }
+
+        function displayDashboardData(data) {
+            document.getElementById('totalUsers').textContent = data.totalUsers;
+            document.getElementById('totalAdmins').textContent = data.totalAdmins;
+            document.getElementById('totalModerators').textContent = data.totalModerators;
+            document.getElementById('totalRegularUsers').textContent = data.totalRegularUsers;
+
+            const activityDiv = document.getElementById('recentActivity');
+            activityDiv.innerHTML = data.recentActivity.map(activity => `
+                <div style="font-size: 12px; margin: 5px 0; padding: 8px; background-color: #f8f9fa; border-radius: 3px;">
+                    <strong>${activity.action}</strong> by ${activity.user} - ${activity.time}
+                </div>
+            `).join('');
+        }
+
+        function displayUsers() {
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = users.map(user => `
+                <div class="user-item">
+                    <div style="display: flex; align-items: center;">
+                        <img src="${user.avatar}" alt="${user.username}" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
+                        <div>
+                            <div style="font-weight: bold;">${user.fullName}</div>
+                            <div style="font-size: 12px; color: #666;">${user.username} - ${user.role} - ${user.department}</div>
+                        </div>
+                    </div>
+                    ${currentUser.permissions.includes('DELETE_USER') && user.id !== currentUser.id ? 
+                        `<button class="btn btn-danger" style="font-size: 12px; padding: 4px 8px;" onclick="deleteUser(${user.id})">Delete</button>` : 
+                        ''}
+                </div>
+            `).join('');
+        }
+
+        function displayAnalytics(data) {
+            const roleDiv = document.getElementById('roleDistribution');
+            roleDiv.innerHTML = Object.entries(data.roleDistribution).map(([role, count]) => `
+                <div style="display: flex; justify-content: space-between; margin: 5px 0; padding: 5px; background-color: #f8f9fa; border-radius: 3px;">
+                    <span>${role}:</span>
+                    <span style="font-weight: bold;">${count}</span>
+                </div>
+            `).join('');
+
+            const deptDiv = document.getElementById('departmentStats');
+            deptDiv.innerHTML = Object.entries(data.departmentStats).map(([dept, count]) => `
+                <div style="display: flex; justify-content: space-between; margin: 5px 0; padding: 5px; background-color: #f8f9fa; border-radius: 3px;">
+                    <span>${dept}:</span>
+                    <span style="font-weight: bold;">${count}</span>
+                </div>
+            `).join('');
+        }
+
+        function displaySettings(data) {
+            const settingsDiv = document.getElementById('settingsContent');
+            settingsDiv.innerHTML = `
+                <div style="margin: 10px 0;"><strong>Site Name:</strong> ${data.siteName}</div>
+                <div style="margin: 10px 0;"><strong>Allow Registration:</strong> ${data.allowRegistration ? 'Yes' : 'No'}</div>
+                <div style="margin: 10px 0;"><strong>Default Role:</strong> ${data.defaultRole}</div>
+                <div style="margin: 10px 0;"><strong>Session Timeout:</strong> ${data.sessionTimeout} minutes</div>
+                <div style="margin: 10px 0;"><strong>Max Login Attempts:</strong> ${data.maxLoginAttempts}</div>
+            `;
+        }
+
+        function displayProfile() {
+            const profileDiv = document.getElementById('profileContent');
+            profileDiv.innerHTML = `
+                <div style="margin: 10px 0;"><strong>Full Name:</strong> ${currentUser.fullName}</div>
+                <div style="margin: 10px 0;"><strong>Username:</strong> ${currentUser.username}</div>
+                <div style="margin: 10px 0;"><strong>Email:</strong> ${currentUser.email}</div>
+                <div style="margin: 10px 0;"><strong>Role:</strong> ${currentUser.role}</div>
+                <div style="margin: 10px 0;"><strong>Department:</strong> ${currentUser.department}</div>
+                <div style="margin: 10px 0;">
+                    <strong>Permissions:</strong><br>
+                    <div style="margin-top: 5px;">
+                        ${currentUser.permissions.map(permission => 
+                            `<span class="permission-badge ${currentUser.role.toLowerCase()}">${permission}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function createUser() {
+            if (!currentUser.permissions.includes('CREATE_USER')) {
+                addLog('❌ Access denied: CREATE_USER permission required', 'error');
+                return;
+            }
+
+            const newUser = {
+                username: document.getElementById('newUsername').value,
+                email: document.getElementById('newEmail').value,
+                password: document.getElementById('newPassword').value,
+                fullName: document.getElementById('newFullName').value,
+                department: document.getElementById('newDepartment').value,
+                role: document.getElementById('newRole').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify(newUser)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    users.push(data.data.user);
+                    displayUsers();
+                    
+                    // Clear form
+                    document.getElementById('newUsername').value = '';
+                    document.getElementById('newEmail').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('newFullName').value = '';
+                    document.getElementById('newDepartment').value = '';
+                    document.getElementById('newRole').value = 'User';
+                    
+                    addLog(`✅ User created: ${data.data.user.username}`, 'success');
+                    
+                    // Reload dashboard stats
+                    await loadRoleBasedData();
+                } else {
+                    addLog(`❌ Create user failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addLog(`❌ Create user error: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!currentUser.permissions.includes('DELETE_USER')) {
+                addLog('❌ Access denied: DELETE_USER permission required', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    users = users.filter(u => u.id !== userId);
+                    displayUsers();
+                    addLog(`✅ User deleted successfully`, 'success');
+                    
+                    // Reload dashboard stats
+                    await loadRoleBasedData();
+                } else {
+                    addLog(`❌ Delete user failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addLog(`❌ Delete user error: ${error.message}`, 'error');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            accessToken = null;
+            users = [];
+            
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+            
+            // Hide all cards
+            document.querySelectorAll('.dashboard-card').forEach(card => {
+                card.classList.add('hidden');
+            });
+            
+            // Reset form
+            document.getElementById('username').value = 'admin';
+            document.getElementById('password').value = 'password123';
+            
+            // Remove selection
+            document.querySelectorAll('.account-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            addLog('✅ Logged out successfully', 'success');
+        }
+
+        // Auto-select admin account on load
+        window.onload = function() {
+            selectAccount('admin');
+        };
+    </script>
+</body>
+</html>
