@@ -1,0 +1,388 @@
+// demo-refresh-token.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refresh Token Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-warning { background-color: #ffc107; color: black; }
+        .btn-info { background-color: #17a2b8; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        
+        .log-container {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f8f9fa;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-warning { color: #ffc107; }
+        .log-info { color: #17a2b8; }
+        .log-time { color: #6c757d; }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: inline-block;
+            width: 100px;
+            font-weight: bold;
+        }
+        .form-group input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        
+        .user-info {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #b3d9ff;
+        }
+        
+        .token-info {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Refresh Token Demo</h1>
+    
+    <div class="container">
+        <h3>Authentication Status</h3>
+        <div id="authStatus">Not logged in</div>
+    </div>
+
+    <div class="container" id="loginForm">
+        <h3>Login</h3>
+        <div class="form-group">
+            <label>Username:</label>
+            <input type="text" id="username" value="admin">
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" id="password" value="password123">
+        </div>
+        <button class="button btn-primary" onclick="login()">Login</button>
+    </div>
+
+    <div class="container" id="userInfo" style="display: none;">
+        <h3>User Information</h3>
+        <div id="userDetails" class="user-info"></div>
+        
+        <h4>Token Information</h4>
+        <div>
+            <strong>Access Token:</strong>
+            <div id="accessToken" class="token-info"></div>
+        </div>
+        <div>
+            <strong>Refresh Token:</strong>
+            <div id="refreshToken" class="token-info"></div>
+        </div>
+        
+        <div style="margin-top: 15px;">
+            <button class="button btn-success" onclick="testApiCall()">Test API Call (Get Profile)</button>
+            <button class="button btn-warning" onclick="simulateTokenExpiry()">Simulate Token Expiry</button>
+            <button class="button btn-info" onclick="manualRefresh()">Manual Refresh Token</button>
+            <button class="button btn-danger" onclick="logout()">Logout</button>
+        </div>
+        
+        <div id="profileData" style="display: none; margin-top: 15px;">
+            <h4>Profile Data (from API)</h4>
+            <pre id="profileJson" style="background: #f8f9fa; padding: 10px; border-radius: 4px;"></pre>
+        </div>
+    </div>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3>Activity Logs</h3>
+            <button class="button btn-secondary" onclick="clearLogs()">Clear Logs</button>
+        </div>
+        <div id="logs" class="log-container">
+            <div class="log-info">Ready to start demo...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h4>How it works:</h4>
+        <ul>
+            <li>1. Login với username/password để nhận access token và refresh token</li>
+            <li>2. Access token được tự động thêm vào header của mọi API request</li>
+            <li>3. Khi access token hết hạn (401 error), hệ thống tự động dùng refresh token để lấy access token mới</li>
+            <li>4. Các request bị fail sẽ được retry với token mới</li>
+            <li>5. Nếu refresh token cũng hết hạn, user sẽ bị logout tự động</li>
+        </ul>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let accessToken = localStorage.getItem('accessToken');
+        let refreshToken = localStorage.getItem('refreshToken');
+        let isRefreshing = false;
+        let failedQueue = [];
+
+        // Check auth status on page load
+        window.onload = function() {
+            if (accessToken && refreshToken) {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                showUserInfo(user);
+                addLog('✅ User already logged in', 'success');
+            }
+        };
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logs = document.getElementById('logs');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log-${type}`;
+            logDiv.innerHTML = `<span class="log-time">[${timestamp}]</span> ${message}`;
+            logs.appendChild(logDiv);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '<div class="log-info">Logs cleared...</div>';
+        }
+
+        async function makeRequest(url, options = {}) {
+            if (accessToken) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${accessToken}`
+                };
+            }
+
+            try {
+                const response = await fetch(url, options);
+                
+                if (response.status === 401 && !options._retry) {
+                    if (isRefreshing) {
+                        return new Promise((resolve, reject) => {
+                            failedQueue.push({ resolve, reject, url, options });
+                        });
+                    }
+
+                    options._retry = true;
+                    isRefreshing = true;
+
+                    try {
+                        addLog('🔄 Access token expired, refreshing...', 'warning');
+                        const newAccessToken = await refreshAccessToken();
+                        processQueue(null, newAccessToken);
+                        
+                        options.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                        return fetch(url, options);
+                    } catch (refreshError) {
+                        processQueue(refreshError, null);
+                        await logout();
+                        throw refreshError;
+                    } finally {
+                        isRefreshing = false;
+                    }
+                }
+
+                return response;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        function processQueue(error, token = null) {
+            failedQueue.forEach(({ resolve, reject, url, options }) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    options.headers['Authorization'] = `Bearer ${token}`;
+                    resolve(fetch(url, options));
+                }
+            });
+            failedQueue = [];
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                addLog(`🔐 Attempting login for ${username}...`, 'info');
+                
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const { user, accessToken: newAccessToken, refreshToken: newRefreshToken } = data.data;
+                    
+                    accessToken = newAccessToken;
+                    refreshToken = newRefreshToken;
+                    
+                    localStorage.setItem('accessToken', accessToken);
+                    localStorage.setItem('refreshToken', refreshToken);
+                    localStorage.setItem('user', JSON.stringify(user));
+                    
+                    showUserInfo(user);
+                    addLog(`✅ Login successful for ${user.username}`, 'success');
+                    addLog(`🔑 Access Token: ${accessToken.substring(0, 20)}...`, 'info');
+                    addLog(`🔄 Refresh Token: ${refreshToken.substring(0, 20)}...`, 'info');
+                } else {
+                    addLog(`❌ Login failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addLog(`❌ Login error: ${error.message}`, 'error');
+            }
+        }
+
+        async function refreshAccessToken() {
+            if (!refreshToken) {
+                throw new Error('No refresh token available');
+            }
+
+            const response = await fetch(`${API_URL}/auth/refresh`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ refreshToken })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                accessToken = data.data.accessToken;
+                localStorage.setItem('accessToken', accessToken);
+                addLog('✅ Token refreshed successfully', 'success');
+                addLog(`🔑 New Access Token: ${accessToken.substring(0, 20)}...`, 'info');
+                updateTokenDisplay();
+                return accessToken;
+            } else {
+                throw new Error(data.message);
+            }
+        }
+
+        async function testApiCall() {
+            try {
+                addLog('🔍 Making API call to get profile...', 'info');
+                
+                const response = await makeRequest(`${API_URL}/auth/profile`);
+                const data = await response.json();
+
+                if (data.success) {
+                    addLog('✅ Profile fetched successfully', 'success');
+                    document.getElementById('profileData').style.display = 'block';
+                    document.getElementById('profileJson').textContent = JSON.stringify(data.data.user, null, 2);
+                } else {
+                    addLog(`❌ API call failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addLog(`❌ API call error: ${error.message}`, 'error');
+            }
+        }
+
+        function simulateTokenExpiry() {
+            localStorage.removeItem('accessToken');
+            accessToken = null;
+            addLog('⚠️ Simulated access token expiry', 'warning');
+            addLog('🔄 Next API call will trigger automatic token refresh', 'info');
+            updateTokenDisplay();
+        }
+
+        async function manualRefresh() {
+            try {
+                addLog('🔄 Manually refreshing token...', 'info');
+                await refreshAccessToken();
+            } catch (error) {
+                addLog(`❌ Manual refresh failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                if (refreshToken) {
+                    await fetch(`${API_URL}/auth/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ refreshToken })
+                    });
+                }
+            } catch (error) {
+                addLog(`❌ Logout API call failed: ${error.message}`, 'error');
+            } finally {
+                accessToken = null;
+                refreshToken = null;
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+                
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('userInfo').style.display = 'none';
+                document.getElementById('authStatus').textContent = 'Not logged in';
+                
+                addLog('✅ Logged out successfully', 'success');
+            }
+        }
+
+        function showUserInfo(user) {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'block';
+            document.getElementById('authStatus').textContent = `Logged in as ${user.username} (${user.role})`;
+            document.getElementById('userDetails').innerHTML = `
+                <strong>Username:</strong> ${user.username}<br>
+                <strong>Email:</strong> ${user.email}<br>
+                <strong>Role:</strong> ${user.role}
+            `;
+            updateTokenDisplay();
+        }
+
+        function updateTokenDisplay() {
+            document.getElementById('accessToken').textContent = accessToken || 'Not available';
+            document.getElementById('refreshToken').textContent = refreshToken || 'Not available';
+        }
+    </script>
+</body>
+</html>
