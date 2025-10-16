@@ -3,6 +3,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { sendResetPasswordEmail } = require('../services/emailService');
+const { logManualActivity } = require('../middleware/activityLogger');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
 
@@ -65,17 +66,33 @@ exports.login = async (req, res) => {
     // Kiểm tra email có tồn tại không
     const user = await User.findOne({ email });
     if (!user) {
+      // Log failed login attempt
+      await logManualActivity(req, 'LOGIN_FAILED', { 
+        email: email,
+        reason: 'User not found'
+      });
       return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
 
     // Kiểm tra mật khẩu
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
+      // Log failed login
+      await logManualActivity(req, 'LOGIN_FAILED', { 
+        email: email,
+        reason: 'Invalid password'
+      });
       return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
 
     // Tạo token
     const token = generateToken(user._id);
+
+    // Log successful login
+    await logManualActivity(req, 'LOGIN_SUCCESS', { 
+      email: user.email,
+      role: user.role
+    });
 
     res.json({
       message: 'Đăng nhập thành công',
