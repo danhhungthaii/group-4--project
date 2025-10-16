@@ -1,5 +1,6 @@
 // backend/middleware/upload.js
 const multer = require('multer');
+const sharp = require('sharp');
 const path = require('path');
 
 // Cấu hình multer để upload file vào memory
@@ -16,6 +17,37 @@ const fileFilter = (req, file, cb) => {
     return cb(null, true);
   } else {
     cb(new Error('Chỉ cho phép upload file ảnh (JPEG, JPG, PNG, GIF, WEBP)'));
+  }
+};
+
+// Middleware để resize ảnh avatar
+const resizeAvatar = async (req, res, next) => {
+  if (!req.file) {
+    return next();
+  }
+
+  try {
+    // Resize ảnh thành 300x300 pixel với quality tốt
+    const resizedImageBuffer = await sharp(req.file.buffer)
+      .resize(300, 300, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
+    // Cập nhật buffer đã resize vào req.file
+    req.file.buffer = resizedImageBuffer;
+    req.file.mimetype = 'image/jpeg';
+    req.file.originalname = req.file.originalname.replace(/\.[^/.]+$/, ".jpeg");
+    
+    next();
+  } catch (error) {
+    console.error('Error resizing image:', error);
+    return res.status(500).json({
+      message: 'Lỗi xử lý ảnh',
+      error: error.message
+    });
   }
 };
 
@@ -53,5 +85,6 @@ const handleUploadError = (error, req, res, next) => {
 
 module.exports = {
   upload,
+  resizeAvatar,
   handleUploadError
 };
