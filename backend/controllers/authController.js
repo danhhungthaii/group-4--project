@@ -4,8 +4,12 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { sendResetPasswordEmail } = require('../services/emailService');
 const { logManualActivity } = require('../middleware/activityLogger');
+const { logUserActivity } = require('../services/activityLogService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
+
+// In-memory rate limiting store
+const loginAttempts = new Map();
 
 // Tạo JWT token
 const generateToken = (userId) => {
@@ -61,6 +65,54 @@ exports.signup = async (req, res) => {
 // Đăng nhập (Login)
 exports.login = async (req, res) => {
   try {
+    // RATE LIMITING CHECK
+    const ip = req.ip || req.connection.remoteAddress || '::1';
+    const now = Date.now();
+    const windowMs = 15 * 60 * 1000; // 15 minutes
+    const maxAttempts = 5;
+
+    if (!loginAttempts.has(ip)) {
+      loginAttempts.set(ip, { count: 0, resetTime: now + windowMs });
+    }
+
+    const record = loginAttempts.get(ip);
+
+    // Reset window if expired
+    if (now > record.resetTime) {
+      record.count = 0;
+      record.resetTime = now + windowMs;
+    }
+
+    record.count++;
+
+    if (record.count > maxAttempts) {
+      
+      // Log rate limit event
+      await logUserActivity({
+        userId: null,
+        action: 'RATE_LIMITED',
+        ipAddress: ip,
+        userAgent: req.headers['user-agent'] || 'Unknown',
+        details: {
+          method: req.method,
+          path: req.path,
+          email: req.body?.email,
+          attempts: record.count,
+          maxAttempts: maxAttempts
+        },
+        success: false,
+        errorMessage: 'Rate limit exceeded'
+      });
+
+      return res.status(429).json({
+        error: 'Too many login attempts',
+        message: 'Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 15 phút.',
+        retryAfter: '15 minutes',
+        attempts: record.count,
+        maxAttempts: maxAttempts
+      });
+    }
+
     const { email, password } = req.body;
 
     // Kiểm tra email có tồn tại không

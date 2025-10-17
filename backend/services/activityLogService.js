@@ -45,6 +45,8 @@ const getUserLogs = async (userId, options = {}) => {
   try {
     const query = { userId };
     if (action) query.action = action;
+    
+    console.log('🔍 Debug getUserLogs:', { userId, query, limit, skip });
 
     const logs = await UserActivityLog.find(query)
       .sort({ timestamp: -1 })
@@ -54,6 +56,8 @@ const getUserLogs = async (userId, options = {}) => {
       .lean();
 
     const total = await UserActivityLog.countDocuments(query);
+    
+    console.log('📊 Query results:', { logsCount: logs.length, total });
     
     return {
       logs,

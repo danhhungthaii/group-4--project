@@ -13,6 +13,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Error handling for JSON parsing
+app.use((error, req, res, next) => {
+  if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
+    return res.status(400).json({ message: 'Invalid JSON format' });
+  }
+  next(error);
+});
+
 // Apply general rate limiting to all routes
 app.use(generalRateLimit);
 

@@ -64,12 +64,9 @@ const loginRateLimit = rateLimit({
     });
   },
 
-  // Skip rate limiting in development cho localhost
+  // Skip rate limiting disabled for testing
   skip: (req) => {
-    if (process.env.NODE_ENV === 'development') {
-      const ip = getClientIP(req);
-      return ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
-    }
+    // Always apply rate limiting for testing purposes
     return false;
   }
 });
@@ -123,10 +120,7 @@ const forgotPasswordRateLimit = rateLimit({
   },
 
   skip: (req) => {
-    if (process.env.NODE_ENV === 'development') {
-      const ip = getClientIP(req);
-      return ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
-    }
+    // Always apply rate limiting for testing purposes
     return false;
   }
 });
@@ -180,10 +174,7 @@ const signupRateLimit = rateLimit({
   },
 
   skip: (req) => {
-    if (process.env.NODE_ENV === 'development') {
-      const ip = getClientIP(req);
-      return ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
-    }
+    // Always apply rate limiting for testing purposes
     return false;
   }
 });
@@ -236,10 +227,7 @@ const generalRateLimit = rateLimit({
   },
 
   skip: (req) => {
-    if (process.env.NODE_ENV === 'development') {
-      const ip = getClientIP(req);
-      return ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
-    }
+    // Always apply rate limiting for testing purposes
     return false;
   }
 });

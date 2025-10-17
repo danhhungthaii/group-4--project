@@ -14,6 +14,7 @@ const userActivityLogSchema = new mongoose.Schema({
       'LOGIN_SUCCESS',
       'LOGIN_FAILED',
       'SIGNUP',
+      'SIGNUP_SUCCESS',
       'LOGOUT',
       'FORGOT_PASSWORD',
       'RESET_PASSWORD',
@@ -25,6 +26,10 @@ const userActivityLogSchema = new mongoose.Schema({
       'UPDATE_USER',
       'DELETE_USER',
       'VIEW_USERS',
+      'VIEW_MY_LOGS',
+      'VIEW_ALL_LOGS',
+      'VIEW_MY_STATS',
+      'VIEW_SYSTEM_STATS',
       'RATE_LIMITED'
     ]
   },

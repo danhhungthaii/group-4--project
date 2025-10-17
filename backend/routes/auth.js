@@ -8,7 +8,8 @@ const { loginRateLimit, forgotPasswordRateLimit, signupRateLimit } = require('..
 
 // Route công khai (không cần token)
 router.post('/signup', signupRateLimit, logActivity('SIGNUP'), authController.signup);
-router.post('/login', loginRateLimit, logActivity('LOGIN_ATTEMPT'), authController.login);
+// Login with rate limiting handled in controller
+router.post('/login', authController.login);
 router.post('/logout', logActivity('LOGOUT'), authController.logout);
 router.post('/forgot-password', forgotPasswordRateLimit, logActivity('FORGOT_PASSWORD'), authController.forgotPassword);
 router.post('/reset-password/:token', logActivity('RESET_PASSWORD'), authController.resetPassword);
