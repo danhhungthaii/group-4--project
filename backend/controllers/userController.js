@@ -21,6 +21,7 @@ exports.getUsers = async (req, res) => {
     const totalPages = Math.ceil(totalUsers / limit);
 
     res.json({
+      success: true,
       message: 'Lấy danh sách người dùng thành công',
       users,
       pagination: {
@@ -33,7 +34,11 @@ exports.getUsers = async (req, res) => {
     });
   } catch (error) {
     console.error('Lỗi lấy danh sách users:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'Lỗi server', 
+      error: error.message 
+    });
   }
 };
 

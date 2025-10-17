@@ -147,10 +147,11 @@ exports.login = async (req, res) => {
     });
 
     res.json({
+      success: true,
       message: 'Đăng nhập thành công',
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role
@@ -179,10 +180,18 @@ exports.logout = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
-    res.json(user);
+    res.json({
+      success: true,
+      message: 'Lấy thông tin profile thành công',
+      user: user
+    });
   } catch (error) {
     console.error('Lỗi lấy profile:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'Lỗi server', 
+      error: error.message 
+    });
   }
 };
 
@@ -297,5 +306,32 @@ exports.resetPassword = async (req, res) => {
   } catch (error) {
     console.error('Lỗi reset password:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+// Verify Token (cho Redux state management)
+exports.verifyToken = async (req, res) => {
+  try {
+    // Middleware auth đã verify token và attach user vào req
+    const user = req.user;
+
+    res.json({
+      success: true,
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role
+      },
+      message: 'Token hợp lệ'
+    });
+
+  } catch (error) {
+    console.error('Lỗi verify token:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Lỗi server', 
+      error: error.message 
+    });
   }
 };

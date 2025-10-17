@@ -15,6 +15,7 @@ router.post('/forgot-password', forgotPasswordRateLimit, logActivity('FORGOT_PAS
 router.post('/reset-password/:token', logActivity('RESET_PASSWORD'), authController.resetPassword);
 
 // Route yêu cầu xác thực (cần token)
+router.get('/verify', authMiddleware, logAuthenticatedActivity('VERIFY_TOKEN'), authController.verifyToken);
 router.get('/profile', authMiddleware, logAuthenticatedActivity('VIEW_PROFILE'), authController.getProfile);
 
 module.exports = router;
