@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt Lại Mật Khẩu - Group 4 Project | SV2</title>
+    <link rel="stylesheet" href="../../styles/reset-password.css">
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🔑</div>
+        
+        <h1>Đặt Lại Mật Khẩu</h1>
+        <p class="subtitle">
+            Nhập mật khẩu mới cho tài khoản của bạn
+        </p>
+
+        <div id="tokenInfo" class="token-info">
+            <strong>🔐 Token hợp lệ!</strong> Bạn có thể đặt lại mật khẩu ngay bây giờ.
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <form id="resetPasswordForm">
+            <div class="form-group">
+                <label for="newPassword">Mật Khẩu Mới</label>
+                <input 
+                    type="password" 
+                    id="newPassword" 
+                    name="newPassword" 
+                    required 
+                    placeholder="Nhập mật khẩu mới"
+                >
+                
+                <div class="password-requirements">
+                    <div class="requirement pending" id="req-length">
+                        <div class="requirement-icon">?</div>
+                        <span>Ít nhất 6 ký tự</span>
+                    </div>
+                    <div class="requirement pending" id="req-upper">
+                        <div class="requirement-icon">?</div>
+                        <span>Có chữ hoa</span>
+                    </div>
+                    <div class="requirement pending" id="req-lower">
+                        <div class="requirement-icon">?</div>
+                        <span>Có chữ thường</span>
+                    </div>
+                    <div class="requirement pending" id="req-number">
+                        <div class="requirement-icon">?</div>
+                        <span>Có số</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Xác Nhận Mật Khẩu</label>
+                <input 
+                    type="password" 
+                    id="confirmPassword" 
+                    name="confirmPassword" 
+                    required 
+                    placeholder="Nhập lại mật khẩu mới"
+                >
+                
+                <div class="password-requirements">
+                    <div class="requirement pending" id="req-match">
+                        <div class="requirement-icon">?</div>
+                        <span>Mật khẩu khớp nhau</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">
+                Đặt Lại Mật Khẩu
+            </button>
+        </form>
+
+        <a href="../auth/login.html" class="back-link">← Quay lại đăng nhập</a>
+    </div>
+
+    <script src="../../scripts/reset-password.js"></script>
+</body>
+</html>
