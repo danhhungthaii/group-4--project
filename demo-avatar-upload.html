@@ -424,6 +424,12 @@
             const fileInput = document.getElementById('avatarFile');
             const responseDiv = document.getElementById('uploadResponse');
 
+            console.log('🚀 Upload avatar called');
+            console.log('Token exists:', !!token);
+            console.log('File input:', fileInput);
+            console.log('Files:', fileInput.files);
+            console.log('First file:', fileInput.files[0]);
+
             if (!token) {
                 showResponse(responseDiv, '🔐 Vui lòng đăng nhập trước', false);
                 return;
@@ -434,11 +440,24 @@
                 return;
             }
 
+            const file = fileInput.files[0];
+            console.log('📁 File details:', {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                lastModified: file.lastModified
+            });
+
             const formData = new FormData();
-            formData.append('avatar', fileInput.files[0]);
+            formData.append('avatar', file);
+            
+            console.log('📦 FormData created');
+            console.log('FormData entries:', [...formData.entries()]);
 
             try {
                 showResponse(responseDiv, '⏳ Đang upload...', true);
+                
+                console.log('📤 Sending request to:', `${BASE_URL}/api/upload/avatar`);
                 
                 const response = await fetch(`${BASE_URL}/api/upload/avatar`, {
                     method: 'POST',
@@ -448,10 +467,17 @@
                     body: formData
                 });
 
+                console.log('📥 Response received:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
                 const data = await response.json();
+                console.log('📊 Response data:', data);
 
                 if (response.ok) {
-                    showResponse(responseDiv, `✅ Upload thành công!\\n🔗 URL: ${data.user.avatar}\\n📊 Size: ${data.details.size}\\n📱 Format: ${data.details.format}`, true);
+                    showResponse(responseDiv, `✅ Upload thành công!\\n🔗 URL: ${data.user.avatar}\\n📊 Size: ${data.avatar.size}\\n📱 Format: ${data.avatar.format}`, true);
                     
                     // Hiển thị avatar mới
                     if (data.user && data.user.avatar) {
