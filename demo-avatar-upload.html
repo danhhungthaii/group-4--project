@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Demo Avatar Upload - Hoạt động 3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .demo-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .demo-header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .demo-header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        
+        .demo-header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .demo-content {
+            padding: 40px;
+        }
+        
+        .step-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .step-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #6c757d;
+            font-size: 0.85em;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2980b9, #1f618d);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .response {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .response.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .response.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .avatar-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .avatar-image {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #3498db;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .no-avatar {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: #ecf0f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #bdc3c7;
+            color: #7f8c8d;
+            font-size: 1.2em;
+            margin: 0 auto;
+        }
+        
+        .preview-section {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f1f3f4;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .preview-image {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #3498db;
+        }
+        
+        .feature-highlight {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .feature-highlight h4 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .feature-item {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .feature-item h5 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .feature-item p {
+            color: #5a6c7d;
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 768px) {
+            .demo-content {
+                padding: 20px;
+            }
+            
+            .avatar-image, .no-avatar {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🎯 Hoạt động 3: Upload Avatar với Cloudinary</h1>
+            <p>Demo frontend form upload avatar, resize và hiển thị sau upload</p>
+        </div>
+        
+        <div class="demo-content">
+            <!-- Feature Highlights -->
+            <div class="feature-highlight">
+                <h4>✨ Tính năng nổi bật của Avatar Upload</h4>
+                <p>Hệ thống upload avatar hoàn chỉnh với resize, compression và cloud storage</p>
+            </div>
+            
+            <div class="feature-list">
+                <div class="feature-item">
+                    <h5>📤 Upload Validation</h5>
+                    <p>Kiểm tra định dạng file và kích thước trước khi upload</p>
+                </div>
+                <div class="feature-item">
+                    <h5>🔄 Auto Resize</h5>
+                    <p>Tự động resize ảnh thành 300x300px với Sharp.js</p>
+                </div>
+                <div class="feature-item">
+                    <h5>☁️ Cloudinary Storage</h5>
+                    <p>Lưu trữ trên Cloudinary với CDN global</p>
+                </div>
+                <div class="feature-item">
+                    <h5>🖼️ Live Preview</h5>
+                    <p>Xem trước ảnh trước khi upload</p>
+                </div>
+            </div>
+            
+            <!-- Step 1: Login -->
+            <div class="step-section">
+                <h3>🔑 Bước 1: Đăng nhập để xác thực</h3>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="loginEmail" placeholder="Nhập email" value="test@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="loginPassword" placeholder="Nhập password" value="password123">
+                </div>
+                <button onclick="login()" class="btn btn-primary">🚀 Đăng nhập</button>
+                <div id="loginResponse" class="response" style="display: none;"></div>
+            </div>
+            
+            <!-- Step 2: Upload Avatar -->
+            <div class="step-section">
+                <h3>📤 Bước 2: Upload Avatar</h3>
+                <div class="form-group">
+                    <label>JWT Token:</label>
+                    <input type="text" id="token" placeholder="Token sẽ tự động điền sau khi đăng nhập" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Chọn ảnh avatar:</label>
+                    <input type="file" id="avatarFile" accept="image/*" onchange="previewImage()">
+                    <small>Chấp nhận: JPG, JPEG, PNG, GIF, WEBP. Tối đa 5MB</small>
+                </div>
+                
+                <!-- Preview Section -->
+                <div id="previewSection" class="preview-section">
+                    <h4>👀 Preview ảnh sẽ upload:</h4>
+                    <img id="previewImg" class="preview-image" src="" alt="Preview">
+                </div>
+                
+                <button onclick="uploadAvatar()" class="btn btn-primary">📤 Upload Avatar</button>
+                <button onclick="deleteAvatar()" class="btn btn-danger">🗑️ Xóa Avatar</button>
+                <div id="uploadResponse" class="response" style="display: none;"></div>
+            </div>
+            
+            <!-- Step 3: Current Avatar -->
+            <div class="step-section">
+                <h3>🖼️ Avatar hiện tại của user</h3>
+                <div class="avatar-display">
+                    <div id="currentAvatar" class="no-avatar">
+                        👤 Chưa có avatar
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = '';
+        const BASE_URL = 'http://localhost:5000';
+
+        // Đăng nhập
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const responseDiv = document.getElementById('loginResponse');
+
+            if (!email || !password) {
+                showResponse(responseDiv, 'Vui lòng nhập đầy đủ email và password', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentToken = data.token;
+                    document.getElementById('token').value = data.token;
+                    showResponse(responseDiv, `✅ Đăng nhập thành công!\\nUser: ${data.user.username}\\nEmail: ${data.user.email}`, true);
+                    
+                    // Hiển thị avatar hiện tại nếu có
+                    if (data.user.avatar) {
+                        updateCurrentAvatar(data.user.avatar);
+                    }
+                } else {
+                    showResponse(responseDiv, `❌ Lỗi đăng nhập: ${data.message}`, false);
+                }
+            } catch (error) {
+                showResponse(responseDiv, `🔌 Lỗi kết nối: ${error.message}`, false);
+            }
+        }
+
+        // Preview ảnh trước khi upload
+        function previewImage() {
+            const fileInput = document.getElementById('avatarFile');
+            const previewSection = document.getElementById('previewSection');
+            const previewImg = document.getElementById('previewImg');
+
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                
+                // Validate file type
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('❌ Chỉ cho phép upload file ảnh (JPEG, JPG, PNG, GIF, WEBP)');
+                    fileInput.value = '';
+                    previewSection.style.display = 'none';
+                    return;
+                }
+
+                // Validate file size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('❌ File ảnh không được vượt quá 5MB');
+                    fileInput.value = '';
+                    previewSection.style.display = 'none';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewSection.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewSection.style.display = 'none';
+            }
+        }
+
+        // Upload avatar
+        async function uploadAvatar() {
+            const token = document.getElementById('token').value;
+            const fileInput = document.getElementById('avatarFile');
+            const responseDiv = document.getElementById('uploadResponse');
+
+            if (!token) {
+                showResponse(responseDiv, '🔐 Vui lòng đăng nhập trước', false);
+                return;
+            }
+
+            if (!fileInput.files[0]) {
+                showResponse(responseDiv, '📷 Vui lòng chọn file ảnh', false);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('avatar', fileInput.files[0]);
+
+            try {
+                showResponse(responseDiv, '⏳ Đang upload...', true);
+                
+                const response = await fetch(`${BASE_URL}/api/upload/avatar`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResponse(responseDiv, `✅ Upload thành công!\\n🔗 URL: ${data.user.avatar}\\n📊 Size: ${data.details.size}\\n📱 Format: ${data.details.format}`, true);
+                    
+                    // Hiển thị avatar mới
+                    if (data.user && data.user.avatar) {
+                        updateCurrentAvatar(data.user.avatar);
+                    }
+                    
+                    // Clear form
+                    fileInput.value = '';
+                    document.getElementById('previewSection').style.display = 'none';
+                    
+                } else {
+                    showResponse(responseDiv, `❌ Lỗi upload: ${data.message}`, false);
+                }
+            } catch (error) {
+                showResponse(responseDiv, `🔌 Lỗi kết nối: ${error.message}`, false);
+            }
+        }
+
+        // Xóa avatar
+        async function deleteAvatar() {
+            const token = document.getElementById('token').value;
+            const responseDiv = document.getElementById('uploadResponse');
+
+            if (!token) {
+                showResponse(responseDiv, '🔐 Vui lòng đăng nhập trước', false);
+                return;
+            }
+
+            if (!confirm('🗑️ Bạn có chắc chắn muốn xóa avatar không?')) {
+                return;
+            }
+
+            try {
+                showResponse(responseDiv, '⏳ Đang xóa avatar...', true);
+                
+                const response = await fetch(`${BASE_URL}/api/upload/avatar`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResponse(responseDiv, '✅ Xóa avatar thành công!', true);
+                    
+                    // Xóa avatar hiển thị
+                    const avatarDiv = document.getElementById('currentAvatar');
+                    avatarDiv.className = 'no-avatar';
+                    avatarDiv.innerHTML = '👤 Chưa có avatar';
+                    
+                } else {
+                    showResponse(responseDiv, `❌ Lỗi xóa avatar: ${data.message}`, false);
+                }
+            } catch (error) {
+                showResponse(responseDiv, `🔌 Lỗi kết nối: ${error.message}`, false);
+            }
+        }
+
+        // Cập nhật hiển thị avatar hiện tại
+        function updateCurrentAvatar(avatarUrl) {
+            const avatarDiv = document.getElementById('currentAvatar');
+            avatarDiv.className = '';
+            avatarDiv.innerHTML = `<img src="${avatarUrl}" alt="User Avatar" class="avatar-image">`;
+        }
+
+        // Hiển thị response
+        function showResponse(element, message, isSuccess) {
+            element.style.display = 'block';
+            element.className = `response ${isSuccess ? 'success' : 'error'}`;
+            element.innerHTML = message.replace(/\\n/g, '<br>');
+            
+            // Auto hide after 10 seconds for success messages
+            if (isSuccess) {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 10000);
+            }
+        }
+
+        // Kiểm tra server khi load trang
+        window.onload = async function() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/health`);
+                if (response.ok) {
+                    console.log('✅ Avatar upload server đang chạy');
+                } else {
+                    console.log('⚠️ Server có vấn đề');
+                }
+            } catch (error) {
+                console.log('❌ Không thể kết nối server:', error.message);
+                alert('⚠️ Vui lòng khởi động server avatar trước khi sử dụng demo!\\n\\nChạy lệnh: cd backend && node server-avatar.js');
+            }
+        };
+    </script>
+</body>
+</html>

@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "avatar": "node server-avatar.js",
+    "avatar:dev": "nodemon server-avatar.js"
   },
   "keywords": [],
   "author": "",
