@@ -1,13 +1,17 @@
 /* 
- * Simple Activity Logs Server - Hoạt động 5
- * Server đơn giản để test rate limiting không cần MongoDB
+ * Enhanced Activity Logs Server - Hoạt động 5 & 6
+ * Server hỗ trợ Redux authentication và Protected Routes
  */
 
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+
+// JWT Secret
+const JWT_SECRET = 'your_jwt_secret_key_here_for_testing_only';
 
 // CORS middleware
 app.use((req, res, next) => {
@@ -155,15 +159,19 @@ const authenticateToken = (req, res, next) => {
         return res.status(401).json({ message: 'Access token required' });
     }
     
-    if (token === 'admin-token') {
-        req.user = mockUsers[0]; // Admin
-    } else if (token === 'user-token') {
-        req.user = mockUsers[1]; // User
-    } else {
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = mockUsers.find(u => u.id === decoded.userId);
+        
+        if (!user) {
+            return res.status(403).json({ message: 'Invalid token - user not found' });
+        }
+        
+        req.user = user;
+        next();
+    } catch (error) {
         return res.status(403).json({ message: 'Invalid token' });
     }
-    
-    next();
 };
 
 // Routes
@@ -197,7 +205,11 @@ app.post('/api/auth/login', loginRateLimit, async (req, res) => {
         }
         
         // Success
-        const token = user.role === 'admin' ? 'admin-token' : 'user-token';
+        const token = jwt.sign(
+            { userId: user.id, email: user.email, role: user.role },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
         
         logActivity(user.id, 'LOGIN_SUCCESS', ip, userAgent,
             { email, role: user.role }, true);
@@ -227,6 +239,24 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
     logActivity(req.user.id, 'LOGOUT', ip, userAgent, { email: req.user.email }, true);
     
     res.json({ message: 'Logout successful' });
+});
+
+// Get user profile
+app.get('/api/auth/profile', authenticateToken, (req, res) => {
+    const ip = getClientIP(req);
+    const userAgent = req.headers['user-agent'];
+    
+    logActivity(req.user.id, 'GET_PROFILE', ip, userAgent, { email: req.user.email }, true);
+    
+    res.json({
+        message: 'Profile retrieved successfully',
+        user: {
+            id: req.user.id,
+            email: req.user.email,
+            name: req.user.name,
+            role: req.user.role
+        }
+    });
 });
 
 // Test rate limiting

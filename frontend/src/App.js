@@ -1,131 +1,94 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+/**
+ * Main App Component
+ * Hoạt động 6: Redux & Protected Routes
+ */
 
-function App() {
-  const [users, setUsers] = useState([]);
-  const [newUser, setNewUser] = useState({ name: "", email: "" });
-  const [editingUser, setEditingUser] = useState(null); // User đang sửa
-  const [editForm, setEditForm] = useState({ name: "", email: "" });
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import store from './store';
+import { getUserProfile, selectIsAuthenticated } from './store/slices/authSlice';
 
-  // Lấy dữ liệu từ backend (MongoDB)
+// Components
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import ProfilePage from './pages/ProfilePage';
+import AdminPage from './pages/AdminPage';
+
+// Styles
+import './App.css';
+import './styles/redux-protected.css';
+
+// App Router Component
+const AppRouter = () => {
+  const dispatch = useDispatch();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const token = localStorage.getItem('token');
+
+  // Check authentication on app start
   useEffect(() => {
-    axios
-      .get("http://localhost:3000/users")
-      .then((res) => {
-        setUsers(res.data);
-      })
-      .catch((err) => {
-        console.error("Lỗi khi lấy dữ liệu:", err);
-      });
-  }, []);
-
-  // Thêm user
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    axios
-      .post("http://localhost:3000/users", newUser)
-      .then((res) => {
-        setUsers([...users, res.data]); // Cập nhật lại danh sách hiển thị
-        setNewUser({ name: "", email: "" });
-      })
-      .catch((err) => {
-        console.error("Lỗi khi thêm user:", err);
-      });
-  };
-
-  // Xóa user
-  const handleDelete = async (id) => {
-    await axios.delete(`http://localhost:3000/users/${id}`);
-    setUsers(users.filter((user) => user._id !== id));
-  };
-
-  // Bắt đầu sửa user
-  const handleEdit = (user) => {
-    setEditingUser(user);
-    setEditForm({ name: user.name, email: user.email });
-  };
-
-  // Lưu user đã sửa
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    const res = await axios.put(
-      `http://localhost:3000/users/${editingUser._id}`,
-      editForm
-    );
-    setUsers(users.map((u) => (u._id === editingUser._id ? res.data : u)));
-    setEditingUser(null);
-  };
+    if (token && !isAuthenticated) {
+      dispatch(getUserProfile());
+    }
+  }, [dispatch, token, isAuthenticated]);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Danh sách User</h1>
-      <ul>
-        {users.map((u) => (
-          <li key={u._id}>
-            {u.name} - {u.email}
-            <button
-              onClick={() => handleEdit(u)}
-              style={{ marginLeft: 8 }}
-            >
-              Sửa
-            </button>
-            <button
-              onClick={() => handleDelete(u._id)}
-              style={{ marginLeft: 4 }}
-            >
-              Xóa
-            </button>
-          </li>
-        ))}
-      </ul>
+    <Router>
+      <div className="App">
+        <Routes>
+          {/* Public Routes */}
+          <Route 
+            path="/login" 
+            element={<LoginPage />} 
+          />
+          
+          {/* Protected Routes */}
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Default redirect */}
+          <Route 
+            path="/" 
+            element={
+              isAuthenticated ? (
+                <Navigate to="/profile" replace />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } 
+          />
+          
+          {/* Catch all - redirect to home */}
+          <Route 
+            path="*" 
+            element={<Navigate to="/" replace />} 
+          />
+        </Routes>
+      </div>
+    </Router>
+  );
+};
 
-      <h2>Thêm User</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Tên"
-          value={newUser.name}
-          onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={newUser.email}
-          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-          required
-        />
-        <button type="submit">Thêm</button>
-      </form>
-
-      {editingUser && (
-        <div>
-          <h2>Sửa User</h2>
-          <form onSubmit={handleUpdate}>
-            <input
-              type="text"
-              value={editForm.name}
-              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              required
-            />
-            <input
-              type="email"
-              value={editForm.email}
-              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-              required
-            />
-            <button type="submit">Lưu</button>
-            <button
-              type="button"
-              onClick={() => setEditingUser(null)}
-              style={{ marginLeft: 4 }}
-            >
-              Hủy
-            </button>
-          </form>
-        </div>
-      )}
-    </div>
+function App() {
+  return (
+    <Provider store={store}>
+      <AppRouter />
+    </Provider>
   );
 }
 
