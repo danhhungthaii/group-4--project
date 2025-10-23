@@ -30,6 +30,7 @@ const userActivityLogSchema = new mongoose.Schema({
       'VIEW_ALL_LOGS',
       'VIEW_MY_STATS',
       'VIEW_SYSTEM_STATS',
+      'VERIFY_TOKEN',
       'RATE_LIMITED'
     ]
   },
