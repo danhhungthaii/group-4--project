@@ -6,8 +6,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// Base API URL
-const API_BASE_URL = 'http://localhost:5002/api';
+// Base API URL - use environment variable on Vercel (must include /api)
+// Example: REACT_APP_API_BASE_URL=https://api.example.com/api
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002/api';
 
 // Configure axios
 const api = axios.create({
