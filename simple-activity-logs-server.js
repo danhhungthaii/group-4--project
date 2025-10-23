@@ -86,14 +86,14 @@ const mockUsers = [
         email: 'admin@test.com',
         name: 'Admin User',
         role: 'admin',
-        password: '$2a$10$rOzJc5cJzv6oL8nMvE5q0eK5nX8tC8wE8sGgNq5vL5fE5mE5qE5cO' // password123
+        password: '$2b$10$LK00xxmANes1XKzIkfpTOOS61ysaWaazx6O1IAO6hiUPCEW0TtxMu' // password123
     },
     {
         id: '2',
         email: 'user@test.com',
         name: 'Test User', 
         role: 'user',
-        password: '$2a$10$rOzJc5cJzv6oL8nMvE5q0eK5nX8tC8wE8sGgNq5vL5fE5mE5qE5cO' // password123
+        password: '$2b$10$LK00xxmANes1XKzIkfpTOOS61ysaWaazx6O1IAO6hiUPCEW0TtxMu' // password123
     }
 ];
 
