@@ -1,74 +1,101 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+/**
+ * Main App Component
+ * Hoạt động 6: Redux & Protected Routes
+ */
 
-// Simple components để test
-function HomePage() {
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import store from './store';
+import { getUserProfile, selectIsAuthenticated } from './store/slices/authSlice';
+
+// Components
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import ProfilePage from './pages/ProfilePage';
+import AdminPage from './pages/AdminPage';
+import HomePage from './pages/HomePage';
+
+// Styles
+import './App.css';
+import './styles/redux-protected.css';
+
+// App Router Component
+const AppRouter = () => {
+  const dispatch = useDispatch();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const token = localStorage.getItem('token');
+
+  // Check authentication on app start
+  useEffect(() => {
+    if (token && !isAuthenticated) {
+      dispatch(getUserProfile());
+    }
+  }, [dispatch, token, isAuthenticated]);
+
   return (
-    <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'Arial' }}>
-      <h1>🎉 Frontend React - Group 4 Project</h1>
-      <p>Deployed successfully on Vercel!</p>
-      <div style={{ marginTop: '20px' }}>
-        <Link 
-          to="/login" 
-          style={{ 
-            padding: '12px 24px', 
-            background: '#007bff', 
-            color: 'white', 
-            textDecoration: 'none', 
-            borderRadius: '8px',
-            margin: '10px'
-          }}
-        >
-          Go to Login
-        </Link>
-        <Link 
-          to="/about" 
-          style={{ 
-            padding: '12px 24px', 
-            background: '#28a745', 
-            color: 'white', 
-            textDecoration: 'none', 
-            borderRadius: '8px',
-            margin: '10px'
-          }}
-        >
-          About
-        </Link>
+    <Router>
+      <div className="App">
+        <Routes>
+          {/* Home Route */}
+          <Route 
+            path="/" 
+            element={<HomePage />} 
+          />
+          
+          {/* Public Routes */}
+          <Route 
+            path="/login" 
+            element={<LoginPage />} 
+          />
+          
+          {/* Protected Routes */}
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Default redirect */}
+          <Route 
+            path="/" 
+            element={
+              isAuthenticated ? (
+                <Navigate to="/profile" replace />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } 
+          />
+          
+          {/* Catch all - redirect to home */}
+          <Route 
+            path="*" 
+            element={<Navigate to="/" replace />} 
+          />
+        </Routes>
       </div>
-    </div>
+    </Router>
   );
-}
-
-function LoginPage() {
-  return (
-    <div style={{ padding: '40px', textAlign: 'center' }}>
-      <h2>Login Page</h2>
-      <p>Redux + Protected Routes will be here</p>
-      <Link to="/">← Back to Home</Link>
-    </div>
-  );
-}
-
-function AboutPage() {
-  return (
-    <div style={{ padding: '40px', textAlign: 'center' }}>
-      <h2>About</h2>
-      <p>Group 4 - Database Authentication Project</p>
-      <p>React + Redux + Protected Routes</p>
-      <Link to="/">← Back to Home</Link>
-    </div>
-  );
-}
+};
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/about" element={<AboutPage />} />
-      </Routes>
-    </Router>
+    <Provider store={store}>
+      <AppRouter />
+    </Provider>
   );
 }
 
