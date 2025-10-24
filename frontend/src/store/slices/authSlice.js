@@ -8,7 +8,7 @@ import axios from 'axios';
 
 // Base API URL - use environment variable on Vercel (must include /api)
 // Example: REACT_APP_API_BASE_URL=https://api.example.com/api
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://group4-backend-api.onrender.com/api';
 
 // Configure axios
 const api = axios.create({
@@ -31,45 +31,15 @@ export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      // Mock login for testing on Vercel (replace with real API later)
-      if (email === 'admin@test.com' && password === 'password123') {
-        const mockResponse = {
-          token: 'mock-jwt-token-admin',
-          user: {
-            id: 1,
-            email: 'admin@test.com',
-            name: 'Admin User',
-            role: 'admin'
-          }
-        };
-        
-        // Lưu token vào localStorage
-        localStorage.setItem('token', mockResponse.token);
-        return mockResponse;
-      } else if (email === 'user@test.com' && password === 'password123') {
-        const mockResponse = {
-          token: 'mock-jwt-token-user',
-          user: {
-            id: 2,
-            email: 'user@test.com',
-            name: 'Regular User',
-            role: 'user'
-          }
-        };
-        
-        // Lưu token vào localStorage
-        localStorage.setItem('token', mockResponse.token);
-        return mockResponse;
-      } else {
-        return rejectWithValue('Email hoặc mật khẩu không đúng');
+      // Real API call to backend
+      const response = await api.post('/auth/login', { email, password });
+      
+      // Lưu token vào localStorage
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
       }
       
-      // Real API call (commented out for now)
-      // const response = await api.post('/auth/login', { email, password });
-      // if (response.data.token) {
-      //   localStorage.setItem('token', response.data.token);
-      // }
-      // return response.data;
+      return response.data;
     } catch (error) {
       const message = error.response?.data?.message || 'Đăng nhập thất bại';
       return rejectWithValue(message);
@@ -102,34 +72,9 @@ export const getUserProfile = createAsyncThunk(
   'auth/getUserProfile',
   async (_, { rejectWithValue }) => {
     try {
-      // Mock profile data based on stored token
-      const token = localStorage.getItem('token');
-      
-      if (token === 'mock-jwt-token-admin') {
-        return {
-          user: {
-            id: 1,
-            email: 'admin@test.com',
-            name: 'Admin User',
-            role: 'admin'
-          }
-        };
-      } else if (token === 'mock-jwt-token-user') {
-        return {
-          user: {
-            id: 2,
-            email: 'user@test.com',
-            name: 'Regular User',
-            role: 'user'
-          }
-        };
-      } else {
-        return rejectWithValue('Token không hợp lệ');
-      }
-      
-      // Real API call (commented out)
-      // const response = await api.get('/auth/profile');
-      // return response.data;
+      // Real API call to backend
+      const response = await api.get('/auth/profile');
+      return response.data;
     } catch (error) {
       const message = error.response?.data?.message || 'Lấy thông tin user thất bại';
       return rejectWithValue(message);
