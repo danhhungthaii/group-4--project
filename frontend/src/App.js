@@ -37,12 +37,6 @@ const AppRouter = () => {
     <Router>
       <div className="App">
         <Routes>
-          {/* Home Route */}
-          <Route 
-            path="/" 
-            element={<HomePage />} 
-          />
-          
           {/* Public Routes */}
           <Route 
             path="/login" 
@@ -75,7 +69,7 @@ const AppRouter = () => {
               isAuthenticated ? (
                 <Navigate to="/profile" replace />
               ) : (
-                <Navigate to="/login" replace />
+                <HomePage />
               )
             } 
           />

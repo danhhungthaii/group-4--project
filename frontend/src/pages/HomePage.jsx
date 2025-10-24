@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 // Simple fallback homepage for testing
 function HomePage() {
@@ -6,7 +7,7 @@ function HomePage() {
     <div style={{ padding: '20px', textAlign: 'center' }}>
       <h1>🎉 Frontend React đã deploy thành công!</h1>
       <p>Redux + Protected Routes đang hoạt động</p>
-      <a href="/login" style={{ 
+      <Link to="/login" style={{ 
         display: 'inline-block', 
         padding: '10px 20px', 
         background: '#007bff', 
@@ -15,7 +16,7 @@ function HomePage() {
         borderRadius: '5px' 
       }}>
         Đi tới trang Login
-      </a>
+      </Link>
     </div>
   );
 }

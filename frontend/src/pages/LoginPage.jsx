@@ -109,15 +109,14 @@ const LoginPage = () => {
 
           <div className="login-links">
             <p>
-              Chưa có tài khoản? 
-              <Link to="/register"> Đăng ký ngay</Link>
+              Chưa có tài khoản? Vui lòng liên hệ admin để tạo tài khoản.
             </p>
           </div>
 
           <div className="test-accounts">
             <h4>Tài khoản test:</h4>
-            <p><strong>Admin:</strong> admin@test.com / password123</p>
-            <p><strong>User:</strong> user@test.com / password123</p>
+            <p><strong>Admin:</strong> admin@example.com / admin123</p>
+            <p><strong>User:</strong> user@example.com / user123</p>
           </div>
         </div>
       </div>
