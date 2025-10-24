@@ -15,6 +15,8 @@ import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import HomePage from './pages/HomePage';
+import EditProfilePage from './pages/EditProfilePage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 
 // Styles
 import './App.css';
@@ -49,6 +51,24 @@ const AppRouter = () => {
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/edit-profile" 
+            element={
+              <ProtectedRoute>
+                <EditProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/change-password" 
+            element={
+              <ProtectedRoute>
+                <ChangePasswordPage />
               </ProtectedRoute>
             } 
           />

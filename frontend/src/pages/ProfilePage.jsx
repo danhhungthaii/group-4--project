@@ -97,11 +97,17 @@ const ProfilePage = () => {
             <h3>🛠️ Hành động</h3>
             
             <div className="action-buttons">
-              <button className="action-button edit">
+              <button 
+                className="action-button edit"
+                onClick={() => navigate('/edit-profile')}
+              >
                 ✏️ Chỉnh sửa thông tin
               </button>
               
-              <button className="action-button security">
+              <button 
+                className="action-button security"
+                onClick={() => navigate('/change-password')}
+              >
                 🔒 Đổi mật khẩu
               </button>
               
