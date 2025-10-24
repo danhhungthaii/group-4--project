@@ -1,0 +1,8 @@
+# Ignore backend when deploying frontend
+backend/
+group-4--project/
+node_modules/
+test-login.js
+*.log
+.env
+.DS_Store
