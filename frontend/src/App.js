@@ -14,6 +14,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import HomePage from './pages/HomePage';
 
 // Styles
 import './App.css';
@@ -36,6 +37,12 @@ const AppRouter = () => {
     <Router>
       <div className="App">
         <Routes>
+          {/* Home Route */}
+          <Route 
+            path="/" 
+            element={<HomePage />} 
+          />
+          
           {/* Public Routes */}
           <Route 
             path="/login" 
