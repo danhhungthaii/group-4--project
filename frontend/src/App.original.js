@@ -15,11 +15,6 @@ import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import HomePage from './pages/HomePage';
-import EditProfilePage from './pages/EditProfilePage';
-import ChangePasswordPage from './pages/ChangePasswordPage';
-import AdvancedFeaturesPage from './pages/AdvancedFeaturesPage';
-import ActivityLogsPage from './pages/ActivityLogsPage';
-import RateLimitingPage from './pages/RateLimitingPage';
 
 // Styles
 import './App.css';
@@ -42,6 +37,12 @@ const AppRouter = () => {
     <Router>
       <div className="App">
         <Routes>
+          {/* Home Route */}
+          <Route 
+            path="/" 
+            element={<HomePage />} 
+          />
+          
           {/* Public Routes */}
           <Route 
             path="/login" 
@@ -54,51 +55,6 @@ const AppRouter = () => {
             element={
               <ProtectedRoute>
                 <ProfilePage />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/edit-profile" 
-            element={
-              <ProtectedRoute>
-                <EditProfilePage />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/change-password" 
-            element={
-              <ProtectedRoute>
-                <ChangePasswordPage />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/advanced-features" 
-            element={
-              <ProtectedRoute>
-                <AdvancedFeaturesPage />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/activity-logs" 
-            element={
-              <ProtectedRoute>
-                <ActivityLogsPage />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/rate-limiting" 
-            element={
-              <ProtectedRoute>
-                <RateLimitingPage />
               </ProtectedRoute>
             } 
           />
@@ -119,7 +75,7 @@ const AppRouter = () => {
               isAuthenticated ? (
                 <Navigate to="/profile" replace />
               ) : (
-                <HomePage />
+                <Navigate to="/login" replace />
               )
             } 
           />

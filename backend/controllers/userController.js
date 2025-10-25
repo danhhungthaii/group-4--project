@@ -1,5 +1,6 @@
 // backend/controllers/userController.js
 const User = require('../models/User');
+const { uploadAvatar, deleteImage, extractPublicId } = require('../config/cloudinary');
 
 // Lấy danh sách user (Admin only)
 exports.getUsers = async (req, res) => {
@@ -20,6 +21,7 @@ exports.getUsers = async (req, res) => {
     const totalPages = Math.ceil(totalUsers / limit);
 
     res.json({
+      success: true,
       message: 'Lấy danh sách người dùng thành công',
       users,
       pagination: {
@@ -32,7 +34,11 @@ exports.getUsers = async (req, res) => {
     });
   } catch (error) {
     console.error('Lỗi lấy danh sách users:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'Lỗi server', 
+      error: error.message 
+    });
   }
 };
 
@@ -166,5 +172,131 @@ exports.getUserStats = async (req, res) => {
   } catch (error) {
     console.error('Lỗi thống kê users:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+// Upload avatar (Authenticated users)
+exports.uploadAvatar = async (req, res) => {
+  try {
+    // Kiểm tra file có được upload không
+    if (!req.file) {
+      return res.status(400).json({ 
+        message: 'Vui lòng chọn file ảnh để upload' 
+      });
+    }
+
+    const userId = req.user._id;
+    const user = await User.findById(userId).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    try {
+      // Xóa avatar cũ trên Cloudinary nếu có
+      if (user.avatar) {
+        const oldPublicId = extractPublicId(user.avatar);
+        if (oldPublicId) {
+          await deleteImage(oldPublicId);
+          console.log('Đã xóa avatar cũ:', oldPublicId);
+        }
+      }
+
+      // Upload ảnh mới lên Cloudinary
+      const cloudinaryResult = await uploadAvatar(req.file.buffer, userId);
+
+      // Cập nhật URL avatar trong database
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { avatar: cloudinaryResult.secure_url },
+        { new: true, runValidators: true }
+      ).select('-password');
+
+      res.json({
+        message: 'Upload avatar thành công',
+        user: updatedUser,
+        avatarInfo: {
+          url: cloudinaryResult.secure_url,
+          publicId: cloudinaryResult.public_id,
+          width: cloudinaryResult.width,
+          height: cloudinaryResult.height,
+          format: cloudinaryResult.format,
+          size: cloudinaryResult.bytes
+        }
+      });
+
+    } catch (cloudinaryError) {
+      console.error('Lỗi upload lên Cloudinary:', cloudinaryError);
+      res.status(500).json({ 
+        message: 'Lỗi upload ảnh lên cloud storage', 
+        error: cloudinaryError.message 
+      });
+    }
+
+  } catch (error) {
+    console.error('Lỗi upload avatar:', error);
+    res.status(500).json({ 
+      message: 'Lỗi server khi upload avatar', 
+      error: error.message 
+    });
+  }
+};
+
+// Xóa avatar (Authenticated users)
+exports.deleteAvatar = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const user = await User.findById(userId).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    if (!user.avatar) {
+      return res.status(400).json({ message: 'Người dùng chưa có avatar để xóa' });
+    }
+
+    try {
+      // Xóa ảnh trên Cloudinary
+      const publicId = extractPublicId(user.avatar);
+      if (publicId) {
+        await deleteImage(publicId);
+        console.log('Đã xóa avatar trên Cloudinary:', publicId);
+      }
+
+      // Cập nhật database - xóa URL avatar
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { avatar: null },
+        { new: true, runValidators: true }
+      ).select('-password');
+
+      res.json({
+        message: 'Xóa avatar thành công',
+        user: updatedUser
+      });
+
+    } catch (cloudinaryError) {
+      console.error('Lỗi xóa ảnh trên Cloudinary:', cloudinaryError);
+      // Vẫn cập nhật database ngay cả khi lỗi Cloudinary
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { avatar: null },
+        { new: true, runValidators: true }
+      ).select('-password');
+
+      res.json({
+        message: 'Xóa avatar thành công (có thể còn lưu trên cloud)',
+        user: updatedUser,
+        warning: 'Có lỗi khi xóa ảnh trên cloud storage'
+      });
+    }
+
+  } catch (error) {
+    console.error('Lỗi xóa avatar:', error);
+    res.status(500).json({ 
+      message: 'Lỗi server khi xóa avatar', 
+      error: error.message 
+    });
   }
 };

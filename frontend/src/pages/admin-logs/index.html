@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - User Activity Logs</title>
+    <link rel="stylesheet" href="../../styles/admin-logs.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1><i class="fas fa-shield-alt"></i> Admin Dashboard</h1>
+                    <p>User Activity Logs & Security Monitoring</p>
+                </div>
+                <div class="header-right">
+                    <div class="admin-info">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="admin-name">Admin User</span>
+                    </div>
+                    <button class="logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('logs')" data-tab="logs">
+                <i class="fas fa-list"></i> Activity Logs
+            </button>
+            <button class="tab-btn" onclick="showTab('stats')" data-tab="stats">
+                <i class="fas fa-chart-bar"></i> Statistics
+            </button>
+            <button class="tab-btn" onclick="showTab('security')" data-tab="security">
+                <i class="fas fa-exclamation-triangle"></i> Security Alerts
+            </button>
+            <button class="tab-btn" onclick="showTab('realtime')" data-tab="realtime">
+                <i class="fas fa-broadcast-tower"></i> Real-time Monitor
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Activity Logs Tab -->
+            <div id="logs-tab" class="tab-content active">
+                <!-- Filters Section -->
+                <section class="filters-section">
+                    <div class="filters-container">
+                        <h3><i class="fas fa-filter"></i> Filters</h3>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="action-filter">Action:</label>
+                                <select id="action-filter" onchange="filterLogs()">
+                                    <option value="">All Actions</option>
+                                    <option value="LOGIN_SUCCESS">Login Success</option>
+                                    <option value="LOGIN_FAILED">Login Failed</option>
+                                    <option value="SIGNUP">Signup</option>
+                                    <option value="LOGOUT">Logout</option>
+                                    <option value="FORGOT_PASSWORD">Forgot Password</option>
+                                    <option value="RESET_PASSWORD">Reset Password</option>
+                                    <option value="UPLOAD_AVATAR">Upload Avatar</option>
+                                    <option value="UPDATE_PROFILE">Update Profile</option>
+                                    <option value="RATE_LIMITED">Rate Limited</option>
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="user-filter">User ID:</label>
+                                <input type="text" id="user-filter" placeholder="Enter User ID" onchange="filterLogs()">
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="ip-filter">IP Address:</label>
+                                <input type="text" id="ip-filter" placeholder="Enter IP Address" onchange="filterLogs()">
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="date-start">From Date:</label>
+                                <input type="datetime-local" id="date-start" onchange="filterLogs()">
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="date-end">To Date:</label>
+                                <input type="datetime-local" id="date-end" onchange="filterLogs()">
+                            </div>
+                            
+                            <div class="filter-actions">
+                                <button class="btn btn-primary" onclick="filterLogs()">
+                                    <i class="fas fa-search"></i> Filter
+                                </button>
+                                <button class="btn btn-secondary" onclick="clearFilters()">
+                                    <i class="fas fa-times"></i> Clear
+                                </button>
+                                <button class="btn btn-success" onclick="exportLogs()">
+                                    <i class="fas fa-download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Logs Table -->
+                <section class="logs-section">
+                    <div class="logs-header">
+                        <h3><i class="fas fa-list"></i> User Activity Logs</h3>
+                        <div class="logs-controls">
+                            <div class="refresh-control">
+                                <button class="btn btn-sm" onclick="refreshLogs()" id="refresh-btn">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <label class="auto-refresh">
+                                    <input type="checkbox" id="auto-refresh" onchange="toggleAutoRefresh()">
+                                    Auto-refresh (30s)
+                                </label>
+                            </div>
+                            <div class="pagination-info">
+                                <span id="logs-count">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="logs-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-clock"></i> Time</th>
+                                    <th><i class="fas fa-user"></i> User</th>
+                                    <th><i class="fas fa-cog"></i> Action</th>
+                                    <th><i class="fas fa-globe"></i> IP Address</th>
+                                    <th><i class="fas fa-check-circle"></i> Status</th>
+                                    <th><i class="fas fa-info-circle"></i> Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-table-body">
+                                <!-- Logs will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Loading Indicator -->
+                    <div id="logs-loading" class="loading-indicator">
+                        <i class="fas fa-spinner fa-spin"></i> Loading logs...
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="pagination-container">
+                        <div class="pagination-controls">
+                            <button class="btn btn-sm" onclick="prevPage()" id="prev-btn" disabled>
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <span class="page-info">
+                                Page <span id="current-page">1</span> of <span id="total-pages">1</span>
+                            </span>
+                            <button class="btn btn-sm" onclick="nextPage()" id="next-btn" disabled>
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="page-size">
+                            <label for="page-size-select">Show:</label>
+                            <select id="page-size-select" onchange="changePageSize()">
+                                <option value="20">20</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span>per page</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Statistics Tab -->
+            <div id="stats-tab" class="tab-content">
+                <section class="stats-section">
+                    <h3><i class="fas fa-chart-bar"></i> Activity Statistics</h3>
+                    
+                    <!-- Summary Cards -->
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4 id="total-logs-count">0</h4>
+                                <p>Total Logs</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4 id="unique-users-count">0</h4>
+                                <p>Unique Users</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4 id="unique-ips-count">0</h4>
+                                <p>Unique IPs</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4 id="failed-attempts-count">0</h4>
+                                <p>Failed Attempts</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts -->
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <h4>Actions Distribution</h4>
+                            <canvas id="actions-chart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h4>Daily Activity (Last 7 Days)</h4>
+                            <canvas id="daily-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Top IPs -->
+                    <div class="top-ips">
+                        <h4>Top IP Addresses</h4>
+                        <div class="ip-list" id="top-ips-list">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Security Alerts Tab -->
+            <div id="security-tab" class="tab-content">
+                <section class="security-section">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Security Alerts</h3>
+                    
+                    <div class="alert-cards">
+                        <div class="alert-card warning">
+                            <div class="alert-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <h4>Rate Limited IPs</h4>
+                                <p id="rate-limited-ips">Loading...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="alert-card danger">
+                            <div class="alert-icon">
+                                <i class="fas fa-ban"></i>
+                            </div>
+                            <div class="alert-content">
+                                <h4>Failed Login Attempts</h4>
+                                <p id="failed-login-count">Loading...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="alert-card info">
+                            <div class="alert-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="alert-content">
+                                <h4>Security Status</h4>
+                                <p id="security-status">All systems operational</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-security-events">
+                        <h4>Recent Security Events</h4>
+                        <div id="security-events-list">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Real-time Monitor Tab -->
+            <div id="realtime-tab" class="tab-content">
+                <section class="realtime-section">
+                    <h3><i class="fas fa-broadcast-tower"></i> Real-time Activity Monitor</h3>
+                    
+                    <div class="realtime-controls">
+                        <button class="btn btn-success" onclick="startRealTimeMonitoring()" id="start-monitor-btn">
+                            <i class="fas fa-play"></i> Start Monitoring
+                        </button>
+                        <button class="btn btn-danger" onclick="stopRealTimeMonitoring()" id="stop-monitor-btn" style="display: none;">
+                            <i class="fas fa-stop"></i> Stop Monitoring
+                        </button>
+                        <div class="monitor-status">
+                            <span id="monitor-status">Stopped</span>
+                            <span class="status-indicator" id="status-indicator"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="realtime-logs">
+                        <div class="realtime-header">
+                            <h4>Live Activity Feed</h4>
+                            <button class="btn btn-sm" onclick="clearRealTimeLogs()">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                        </div>
+                        <div class="realtime-content" id="realtime-logs-container">
+                            <!-- Real-time logs will appear here -->
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Include Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <!-- Admin Logs JavaScript -->
+    <script src="../../scripts/admin-logs.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server-rbac.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/server-rbac.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
