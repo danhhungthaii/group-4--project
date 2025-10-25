@@ -17,6 +17,9 @@ import AdminPage from './pages/AdminPage';
 import HomePage from './pages/HomePage';
 import EditProfilePage from './pages/EditProfilePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
+import AdvancedFeaturesPage from './pages/AdvancedFeaturesPage';
+import ActivityLogsPage from './pages/ActivityLogsPage';
+import RateLimitingPage from './pages/RateLimitingPage';
 
 // Styles
 import './App.css';
@@ -69,6 +72,33 @@ const AppRouter = () => {
             element={
               <ProtectedRoute>
                 <ChangePasswordPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/advanced-features" 
+            element={
+              <ProtectedRoute>
+                <AdvancedFeaturesPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/activity-logs" 
+            element={
+              <ProtectedRoute>
+                <ActivityLogsPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/rate-limiting" 
+            element={
+              <ProtectedRoute>
+                <RateLimitingPage />
               </ProtectedRoute>
             } 
           />

@@ -111,6 +111,13 @@ const ProfilePage = () => {
                 🔒 Đổi mật khẩu
               </button>
               
+              <button 
+                className="action-button advanced"
+                onClick={() => navigate('/advanced-features')}
+              >
+                🚀 Advanced Features
+              </button>
+              
               {user?.role === 'admin' && (
                 <button 
                   className="action-button admin"
