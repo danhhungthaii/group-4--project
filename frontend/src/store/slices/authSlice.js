@@ -46,10 +46,14 @@ export const loginUser = createAsyncThunk(
         
         return {
           user: response.data.user,
-        token: token
-      };
+          token: response.data.token
+        };
+      } else {
+        return rejectWithValue(response.data.message || 'Đăng nhập thất bại');
+      }
     } catch (error) {
-      return rejectWithValue('Đăng nhập thất bại');
+      console.error('❌ Login error:', error);
+      return rejectWithValue(error.response?.data?.message || 'Đăng nhập thất bại');
     }
   }
 );
@@ -96,19 +100,13 @@ export const getUserProfile = createAsyncThunk(
     }
   }
 );
-      };
-    } catch (error) {
-      return rejectWithValue('Lấy thông tin user thất bại');
-    }
-  }
-);
 
 // Logout thunk
 export const logoutUser = createAsyncThunk(
   'auth/logoutUser',
   async (_, { rejectWithValue }) => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/api/auth/logout');
       localStorage.removeItem('token');
       return null;
     } catch (error) {
