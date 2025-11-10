@@ -33,35 +33,103 @@ const User = require('./models/User');
 // ✅ Route chính cho trang chủ
 app.get("/", (req, res) => {
   res.json({
-    message: "🚀 Group 4 Backend API is running!",
+    message: "🚀 Group 4 Database Authentication API Server 🔐",
     status: "healthy",
-    version: "1.0.0",
-    endpoints: {
-      // User Management (Protected)
-      getAllUsers: "GET /api/users (Admin only)",
-      createUser: "POST /api/users (Admin only)",
-      getUserById: "GET /api/users/:id (Authenticated)",
-      updateUser: "PUT /api/users/:id (Self/Admin)",
-      deleteUser: "DELETE /api/users/:id (Admin only)",
-      
-      // Authentication
-      login: "POST /api/auth/login",
-      register: "POST /api/auth/register",
-      logout: "POST /api/auth/logout",
-      getProfile: "GET /api/auth/profile (Authenticated)",
-      forgotPassword: "POST /api/auth/forgot-password",
-      resetPassword: "POST /api/auth/reset-password",
-      
-      // Profile Management (Protected)
-      updateProfile: "PUT /api/auth/profile (Authenticated)",
-      changePassword: "POST /api/auth/change-password (Authenticated)",
-      uploadAvatar: "POST /api/auth/upload-avatar (Authenticated)",
-      deleteAvatar: "DELETE /api/auth/delete-avatar (Authenticated)",
-      
-      // Health Check
-      health: "GET /api/health"
+    version: "2.0.0 - Advanced Features",
+    
+    // 🔥 ADVANCED FEATURES OVERVIEW
+    features: {
+      "Authentication System": {
+        "JWT Tokens": "✅ 7-day expiry with refresh capability",
+        "Password Security": "✅ bcrypt hashing with salt rounds",
+        "Password Reset": "✅ Email-based reset with crypto tokens", 
+        "Email Verification": "✅ Account verification system"
+      },
+      "Authorization (RBAC)": {
+        "Role Management": "✅ User/Admin role separation",
+        "Permission Control": "✅ Endpoint-level authorization",
+        "Access Control": "✅ Self-or-admin resource access"
+      },
+      "Advanced Security": {
+        "Rate Limiting": "✅ Login attempt protection",
+        "Account Locking": "✅ Brute force prevention", 
+        "Token Verification": "✅ JWT middleware protection",
+        "Input Validation": "✅ Comprehensive data validation"
+      },
+      "File Management": {
+        "Cloudinary Upload": "✅ Avatar image processing",
+        "Image Optimization": "✅ Auto-resize and compression",
+        "Storage Management": "✅ Cloud-based file storage"
+      },
+      "Email Services": {
+        "Password Reset": "✅ Automated email notifications",
+        "Account Verification": "✅ Email confirmation system",
+        "SMTP Integration": "✅ Gmail/SMTP support"
+      }
     },
-    documentation: "https://github.com/danhhungthaii/group-4--project"
+
+    // 📋 API ENDPOINTS
+    endpoints: {
+      // 🔐 Authentication & Authorization
+      "auth_login": "POST /api/auth/login - JWT login with bcrypt",
+      "auth_register": "POST /api/auth/register - Secure user registration", 
+      "auth_logout": "POST /api/auth/logout - Session termination",
+      "auth_profile": "GET /api/auth/profile - Protected user profile",
+      "auth_forgot": "POST /api/auth/forgot-password - Email reset token",
+      "auth_reset": "POST /api/auth/reset-password - Token-based reset",
+      
+      // 👤 Profile Management (Protected)
+      "profile_update": "PUT /api/auth/profile - Update user info",
+      "profile_password": "POST /api/auth/change-password - Secure password change",
+      "profile_avatar_upload": "POST /api/auth/upload-avatar - Cloudinary image upload",
+      "profile_avatar_delete": "DELETE /api/auth/delete-avatar - Remove avatar",
+      
+      // 👥 User Management (Admin/Protected)
+      "users_list": "GET /api/users - List all users (Admin only)",
+      "users_create": "POST /api/users - Create user (Admin only)", 
+      "users_get": "GET /api/users/:id - Get user details (Auth required)",
+      "users_update": "PUT /api/users/:id - Update user (Self/Admin)",
+      "users_delete": "DELETE /api/users/:id - Delete user (Admin only)",
+      
+      // 🔍 System Health
+      "health": "GET /api/health - System status check"
+    },
+
+    // 🛡️ SECURITY FEATURES
+    security: {
+      "Password Hashing": "bcrypt with 10 salt rounds",
+      "JWT Tokens": "7-day expiry with secure signing",
+      "Rate Limiting": "5 attempts per 15 minutes",
+      "CORS": "Cross-origin resource sharing enabled",
+      "Input Validation": "MongoDB injection protection",
+      "File Upload": "Secure Cloudinary integration"
+    },
+
+    // 🏗️ TECHNICAL STACK
+    technology: {
+      "Backend": "Node.js + Express.js",
+      "Database": "MongoDB Atlas (Cloud)",
+      "Authentication": "JWT + bcrypt",
+      "File Storage": "Cloudinary",
+      "Email Service": "Nodemailer + Gmail SMTP",
+      "Security": "Express Rate Limit + CORS"
+    },
+
+    // 🔗 Documentation & Links
+    documentation: {
+      "GitHub Repository": "https://github.com/danhhungthaii/group-4--project",
+      "Frontend Demo": "https://group4-project-vercel-v2.vercel.app",
+      "API Base URL": "https://group4-backend-api.onrender.com",
+      "Postman Collection": "Available in repository"
+    },
+
+    // 📊 Database Schema
+    database: {
+      "Collections": ["users", "roles", "activity_logs"],
+      "User Fields": ["name", "email", "password", "avatar", "role", "resetTokens"],
+      "Indexing": "Email uniqueness, role references",
+      "Connection": "MongoDB Atlas with connection pooling"
+    }
   });
 });
 
