@@ -7,8 +7,8 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 // Base API URL - use environment variable on Vercel
-// Fallback to mock API for demo
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://jsonplaceholder.typicode.com';
+// Point to our Render backend
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://group4-backend-api.onrender.com';
 
 // Configure axios
 const api = axios.create({
@@ -31,48 +31,21 @@ export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      // Mock authentication for demo
-      const mockUsers = {
-        'admin@example.com': { 
-          password: 'admin123', 
-          user: { 
-            id: 1, 
-            email: 'admin@example.com', 
-            username: 'admin',
-            role: 'Admin',
-            fullName: 'System Administrator',
-            department: 'IT',
-            avatar: 'https://via.placeholder.com/100/007bff/ffffff?text=AD'
-          } 
-        },
-        'user@example.com': { 
-          password: 'user123', 
-          user: { 
-            id: 2, 
-            email: 'user@example.com', 
-            username: 'user',
-            role: 'User',
-            fullName: 'Regular User',
-            department: 'Sales',
-            avatar: 'https://via.placeholder.com/100/6c757d/ffffff?text=USR'
-          } 
-        }
-      };
+      console.log('🔐 Calling login API:', API_BASE_URL);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const userData = mockUsers[email];
-      if (!userData || userData.password !== password) {
-        return rejectWithValue('Email hoặc mật khẩu không đúng');
-      }
-      
-      // Generate mock token
-      const token = `mock_token_${Date.now()}`;
-      localStorage.setItem('token', token);
-      
-      return {
-        user: userData.user,
+      const response = await api.post('/api/auth/login', {
+        email,
+        password
+      });
+
+      console.log('✅ Login response:', response.data);
+
+      if (response.data.success) {
+        // Store token
+        localStorage.setItem('token', response.data.token);
+        
+        return {
+          user: response.data.user,
         token: token
       };
     } catch (error) {
@@ -86,7 +59,7 @@ export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async ({ name, email, password }, { rejectWithValue }) => {
     try {
-      const response = await api.post('/auth/register', { name, email, password });
+      const response = await api.post('/api/auth/register', { name, email, password });
       
       // Lưu token vào localStorage
       if (response.data.token) {
@@ -104,29 +77,25 @@ export const registerUser = createAsyncThunk(
 // Get user profile thunk
 export const getUserProfile = createAsyncThunk(
   'auth/getUserProfile',
-  async (_, { rejectWithValue, getState }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      // Mock profile fetch - get from current state or localStorage
-      const token = localStorage.getItem('token');
-      if (!token || !token.startsWith('mock_token_')) {
-        return rejectWithValue('Token không hợp lệ');
-      }
+      console.log('👤 Fetching user profile from API:', API_BASE_URL);
       
-      // Get user from current state if available
-      const currentUser = getState().auth.user;
-      if (currentUser) {
-        return currentUser;
-      }
+      const response = await api.get('/api/auth/profile');
+      console.log('✅ Profile response:', response.data);
       
-      // Fallback user data
-      return {
-        id: 1,
-        email: 'admin@example.com',
-        username: 'admin',
-        role: 'Admin',
-        fullName: 'System Administrator',
-        department: 'IT',
-        avatar: 'https://via.placeholder.com/100/007bff/ffffff?text=AD'
+      if (response.data.success) {
+        return response.data.data.user;
+      } else {
+        return rejectWithValue(response.data.message || 'Lấy thông tin thất bại');
+      }
+    } catch (error) {
+      console.error('❌ Profile fetch error:', error);
+      const message = error.response?.data?.message || 'Không thể lấy thông tin profile';
+      return rejectWithValue(message);
+    }
+  }
+);
       };
     } catch (error) {
       return rejectWithValue('Lấy thông tin user thất bại');
