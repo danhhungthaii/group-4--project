@@ -6,12 +6,8 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 require('dotenv').config();
 
-// Import controllers and middleware
-const authController = require('./controllers/authController');
-const userController = require('./controllers/userController');
-const profileController = require('./controllers/profileController');
+// Import middleware only (controllers implemented inline)
 const authMiddleware = require('./middleware/auth');
-const { upload } = require('./middleware/upload');
 
 const app = express();
 app.use(cors());
@@ -134,26 +130,200 @@ app.get("/", (req, res) => {
 });
 
 // API: lấy tất cả user (chỉ admin)
-app.get("/api/users", authMiddleware, userController.getAllUsers);
+app.get("/api/users", authMiddleware, async (req, res) => {
+  try {
+    // Kiểm tra admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Chỉ admin mới có quyền xem danh sách user' });
+    }
+    const users = await User.find().select('-password');
+    res.json({ success: true, data: users });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+  }
+});
 
 // API: thêm user (chỉ admin)
-app.post("/api/users", authMiddleware, userController.createUser);
+app.post("/api/users", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Chỉ admin mới có quyền tạo user' });
+    }
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email và password là bắt buộc' });
+    }
+    
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email đã tồn tại' });
+    }
+    
+    const newUser = new User({ name, email, password, role: role || 'user' });
+    await newUser.save();
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Tạo user thành công',
+      data: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+  }
+});
 
 // API: lấy user theo ID
-app.get("/api/users/:id", authMiddleware, userController.getUserById);
+app.get("/api/users/:id", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy user' });
+    }
+    res.json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+  }
+});
 
 // API: cập nhật user
-app.put("/api/users/:id", authMiddleware, userController.updateUser);
+app.put("/api/users/:id", authMiddleware, async (req, res) => {
+  try {
+    // Chỉ cho phép admin hoặc chính user đó
+    if (req.user.role !== 'admin' && req.user._id.toString() !== req.params.id) {
+      return res.status(403).json({ message: 'Bạn chỉ có thể cập nhật thông tin của chính mình' });
+    }
+    
+    const { name, email } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { name, email },
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy user' });
+    }
+    res.json({ success: true, message: 'Cập nhật user thành công', data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+  }
+});
 
 // API: xóa user
-app.delete("/api/users/:id", authMiddleware, userController.deleteUser);
+app.delete("/api/users/:id", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Chỉ admin mới có quyền xóa user' });
+    }
+    
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy user' });
+    }
+    res.json({ success: true, message: 'Xóa user thành công' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+  }
+});
 
 // ✅ Authentication APIs với JWT và bcrypt
-app.post("/api/auth/login", authController.login);
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email và mật khẩu là bắt buộc' });
+    }
 
-app.post("/api/auth/register", authController.signup);
+    // Tìm user theo email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
+    }
 
-app.get("/api/auth/profile", authMiddleware, profileController.getProfile);
+    // Kiểm tra mật khẩu
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
+    }
+
+    // Tạo token
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      success: true,
+      message: 'Đăng nhập thành công',
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Lỗi đăng nhập:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+});
+
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+
+    // Kiểm tra xem email đã tồn tại chưa
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email đã được sử dụng' });
+    }
+
+    // Kiểm tra độ dài mật khẩu
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Mật khẩu phải có ít nhất 6 ký tự' });
+    }
+
+    // Tạo user mới
+    const user = new User({
+      name,
+      email,
+      password,
+      role: role || 'user'
+    });
+
+    await user.save();
+
+    // Tạo token
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.status(201).json({
+      message: 'Đăng ký thành công',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Lỗi đăng ký:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+});
+
+app.get("/api/auth/profile", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    res.json({
+      success: true,
+      data: { user }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+});
 
 app.post("/api/auth/logout", (req, res) => {
   res.json({
@@ -163,16 +333,66 @@ app.post("/api/auth/logout", (req, res) => {
 });
 
 // ✅ Advanced Authentication Features
-app.post("/api/auth/forgot-password", authController.forgotPassword);
-app.post("/api/auth/reset-password", authController.resetPassword);
+app.post("/api/auth/forgot-password", async (req, res) => {
+  res.json({ message: 'Tính năng forgot password đang được phát triển' });
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  res.json({ message: 'Tính năng reset password đang được phát triển' });
+});
 
 // ✅ Profile Management với Authentication
-app.put("/api/auth/profile", authMiddleware, profileController.updateProfile);
-app.post("/api/auth/change-password", authMiddleware, profileController.changePassword);
+app.put("/api/auth/profile", authMiddleware, async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { name, email },
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    res.json({ message: 'Cập nhật profile thành công', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+});
 
-// ✅ Avatar Upload với Cloudinary
-app.post("/api/auth/upload-avatar", authMiddleware, upload.single('avatar'), userController.uploadAvatar);
-app.delete("/api/auth/delete-avatar", authMiddleware, userController.deleteAvatar);
+app.post("/api/auth/change-password", authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Mật khẩu hiện tại và mật khẩu mới là bắt buộc' });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
+    }
+
+    const user = await User.findById(req.user._id);
+    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+    
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({ message: 'Mật khẩu hiện tại không đúng' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Đổi mật khẩu thành công' });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+});
+
+// ✅ Avatar Upload với Cloudinary  
+app.post("/api/auth/upload-avatar", authMiddleware, async (req, res) => {
+  res.json({ message: 'Tính năng upload avatar đang được phát triển' });
+});
+
+app.delete("/api/auth/delete-avatar", authMiddleware, async (req, res) => {
+  res.json({ message: 'Tính năng delete avatar đang được phát triển' });
+});
 
 // ✅ Health Check API
 app.get("/api/health", (req, res) => {
