@@ -7,7 +7,8 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  loginUser, 
+  loginUser,
+  registerUser, 
   selectIsLoading, 
   selectError, 
   selectIsAuthenticated,
@@ -23,9 +24,12 @@ const LoginPage = () => {
   const error = useSelector(selectError);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   
+  const [isRegister, setIsRegister] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
+    name: '',
+    confirmPassword: ''
   });
 
   // Redirect nếu đã đăng nhập
@@ -52,16 +56,55 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.email && formData.password) {
-      await dispatch(loginUser(formData));
+    
+    if (isRegister) {
+      // Validation cho đăng ký
+      if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+        alert('Vui lòng điền đầy đủ thông tin');
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        alert('Mật khẩu xác nhận không khớp');
+        return;
+      }
+      if (formData.password.length < 6) {
+        alert('Mật khẩu phải có ít nhất 6 ký tự');
+        return;
+      }
+      
+      const registerData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      };
+      await dispatch(registerUser(registerData));
+    } else {
+      // Login
+      if (formData.email && formData.password) {
+        await dispatch(loginUser({
+          email: formData.email,
+          password: formData.password
+        }));
+      }
     }
+  };
+
+  const toggleMode = () => {
+    setIsRegister(!isRegister);
+    setFormData({
+      email: '',
+      password: '',
+      name: '',
+      confirmPassword: ''
+    });
+    dispatch(clearError());
   };
 
   return (
     <div className="login-page">
       <div className="login-container">
         <div className="login-card">
-          <h2>Đăng nhập</h2>
+          <h2>{isRegister ? 'Đăng ký tài khoản' : 'Đăng nhập'}</h2>
           
           {error && (
             <div className="error-message">
@@ -70,6 +113,21 @@ const LoginPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="login-form">
+            {isRegister && (
+              <div className="form-group">
+                <label htmlFor="name">Họ và tên:</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Nhập họ và tên"
+                  required
+                />
+              </div>
+            )}
+            
             <div className="form-group">
               <label htmlFor="email">Email:</label>
               <input
@@ -94,30 +152,59 @@ const LoginPage = () => {
                 onChange={handleChange}
                 required
                 disabled={isLoading}
-                placeholder="Nhập mật khẩu"
+                placeholder={isRegister ? "Nhập mật khẩu (ít nhất 6 ký tự)" : "Nhập mật khẩu"}
               />
             </div>
+
+            {isRegister && (
+              <div className="form-group">
+                <label htmlFor="confirmPassword">Xác nhận mật khẩu:</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  disabled={isLoading}
+                  placeholder="Nhập lại mật khẩu"
+                />
+              </div>
+            )}
 
             <button 
               type="submit" 
               className="login-button"
               disabled={isLoading}
             >
-              {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              {isLoading 
+                ? (isRegister ? 'Đang đăng ký...' : 'Đang đăng nhập...') 
+                : (isRegister ? 'Đăng ký' : 'Đăng nhập')
+              }
             </button>
           </form>
 
           <div className="login-links">
             <p>
-              Chưa có tài khoản? Vui lòng liên hệ admin để tạo tài khoản.
+              {isRegister ? 'Đã có tài khoản?' : 'Chưa có tài khoản?'}{' '}
+              <button 
+                type="button" 
+                className="link-button" 
+                onClick={toggleMode}
+                disabled={isLoading}
+              >
+                {isRegister ? 'Đăng nhập ngay' : 'Đăng ký ngay'}
+              </button>
             </p>
           </div>
 
-          <div className="test-accounts">
-            <h4>Tài khoản test:</h4>
-            <p><strong>Admin:</strong> admin@example.com / admin123</p>
-            <p><strong>User:</strong> user@example.com / user123</p>
-          </div>
+          {!isRegister && (
+            <div className="test-accounts">
+              <h4>Tài khoản test:</h4>
+              <p><strong>Admin:</strong> admin@example.com / admin123</p>
+              <p><strong>User:</strong> user@example.com / user123</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
