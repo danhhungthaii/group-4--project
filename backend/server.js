@@ -10,7 +10,21 @@ require('dotenv').config();
 const authMiddleware = require('./middleware/auth');
 
 const app = express();
-app.use(cors());
+
+// ✅ Enhanced CORS configuration for multiple Vercel deployments
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'https://group4-project-vercel-v2.vercel.app',
+    'https://group-4-project-het-blush.vercel.app',
+    /https:\/\/.*\.vercel\.app$/, // Allow all Vercel subdomains
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // JWT Secret
@@ -114,9 +128,11 @@ app.get("/", (req, res) => {
     // 🔗 Documentation & Links
     documentation: {
       "GitHub Repository": "https://github.com/danhhungthaii/group-4--project",
-      "Frontend Demo": "https://group4-project-vercel-v2.vercel.app",
+      "Frontend Demo 1": "https://group4-project-vercel-v2.vercel.app",
+      "Frontend Demo 2": "https://group-4-project-het-blush.vercel.app",
       "API Base URL": "https://group4-backend-api.onrender.com",
-      "Postman Collection": "Available in repository"
+      "Postman Collection": "Available in repository",
+      "CORS Enabled": "Multiple Vercel domains supported"
     },
 
     // 📊 Database Schema
