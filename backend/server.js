@@ -18,6 +18,18 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", UserSchema);
 
+// ✅ Route chính cho trang chủ
+app.get("/", (req, res) => {
+  res.json({
+    message: "🚀 Group 4 Backend API is running!",
+    status: "healthy",
+    endpoints: {
+      users: "/api/users",
+      createUser: "POST /api/users"
+    }
+  });
+});
+
 // API: lấy tất cả user
 app.get("/api/users", async (req, res) => {
   const users = await User.find();
@@ -32,6 +44,7 @@ app.post("/api/users", async (req, res) => {
   res.json(newUser);
 });
 
-app.listen(5000, () => {
-  console.log("🚀 Backend running at http://localhost:5000");
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Backend running at http://localhost:${PORT}`);
 });
