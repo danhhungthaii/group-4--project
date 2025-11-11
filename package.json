@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "build": "cd frontend && npm install && npm run build",
     "demo": "node server-demo.js",
     "frontend": "node frontend-server.js",
     "demo:server": "node server-demo.js",
