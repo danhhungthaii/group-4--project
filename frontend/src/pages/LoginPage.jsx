@@ -192,8 +192,13 @@ const LoginPage = () => {
                 className="link-button" 
                 onClick={toggleMode}
                 disabled={isLoading}
+                style={{ 
+                  color: '#007bff', 
+                  textDecoration: 'underline',
+                  fontWeight: 'bold'
+                }}
               >
-                {isRegister ? 'Đăng nhập ngay' : 'Đăng ký ngay'}
+                {isRegister ? '🔐 Đăng nhập ngay' : '📝 Đăng ký ngay'}
               </button>
             </p>
           </div>
@@ -201,8 +206,8 @@ const LoginPage = () => {
           {!isRegister && (
             <div className="test-accounts">
               <h4>Tài khoản test:</h4>
-              <p><strong>Admin:</strong> admin@example.com / admin123</p>
-              <p><strong>User:</strong> user@example.com / user123</p>
+              <p><strong>Admin:</strong> admin@test.com / password123</p>
+              <p><strong>User:</strong> user@test.com / password123</p>
             </div>
           )}
         </div>
