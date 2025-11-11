@@ -16,18 +16,23 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isLoading = useSelector(selectIsLoading);
   const user = useSelector(state => state.auth.user);
-  const token = useSelector(state => state.auth.token);
+  const localToken = localStorage.getItem('token');
 
   // Kiểm tra authentication khi component mount
   useEffect(() => {
-    if (token && !user && !isLoading) {
+    if (localToken && !user && !isLoading) {
       // Có token nhưng chưa có user info, fetch profile
       dispatch(getUserProfile());
     }
-  }, [dispatch, token, user, isLoading]);
+  }, [dispatch, localToken, user, isLoading]);
 
-  // Hiển thị loading khi đang fetch user profile
-  if (isLoading) {
+  // Chưa đăng nhập -> redirect đến login
+  if (!localToken) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Có token nhưng chưa authenticated và đang loading -> show loading
+  if (localToken && !isAuthenticated && isLoading) {
     return (
       <div className="loading-container">
         <div className="loading-spinner">
@@ -38,8 +43,8 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     );
   }
 
-  // Chưa đăng nhập -> redirect đến login
-  if (!isAuthenticated || !token) {
+  // Có token nhưng authentication failed -> redirect to login
+  if (localToken && !isAuthenticated && !isLoading) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
