@@ -35,9 +35,17 @@ const AppRouter = () => {
   // Check authentication on app start
   useEffect(() => {
     console.log('🚀 App init:', { token: !!token, isAuthenticated, isLoading });
+    
+    // Auto-clear expired tokens on app start
     if (token && !isAuthenticated && !isLoading) {
       console.log('📱 Fetching user profile...');
-      dispatch(getUserProfile());
+      dispatch(getUserProfile()).then((result) => {
+        if (result.type === 'auth/getUserProfile/rejected') {
+          console.log('🚨 Profile fetch failed, clearing token');
+          localStorage.removeItem('token');
+          window.location.reload();
+        }
+      });
     }
   }, [dispatch, token, isAuthenticated, isLoading]);
 
