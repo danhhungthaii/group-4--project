@@ -34,7 +34,9 @@ const AppRouter = () => {
 
   // Check authentication on app start
   useEffect(() => {
+    console.log('🚀 App init:', { token: !!token, isAuthenticated, isLoading });
     if (token && !isAuthenticated && !isLoading) {
+      console.log('📱 Fetching user profile...');
       dispatch(getUserProfile());
     }
   }, [dispatch, token, isAuthenticated, isLoading]);

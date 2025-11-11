@@ -26,8 +26,18 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     }
   }, [dispatch, localToken, user, isLoading]);
 
+  // Debug logging
+  console.log('🔒 ProtectedRoute check:', { 
+    localToken: !!localToken, 
+    isAuthenticated, 
+    isLoading, 
+    user: !!user,
+    location: location.pathname 
+  });
+
   // Chưa đăng nhập -> redirect đến login
   if (!localToken) {
+    console.log('❌ No token, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
