@@ -21,10 +21,25 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   // Kiểm tra authentication khi component mount
   useEffect(() => {
     if (localToken && !user && !isLoading) {
-      // Có token nhưng chưa có user info, fetch profile
+      console.log('🔄 Fetching user profile...');
       dispatch(getUserProfile());
     }
   }, [dispatch, localToken, user, isLoading]);
+
+  // Timeout để tránh loading vô hạn
+  useEffect(() => {
+    if (localToken && isLoading) {
+      const timeout = setTimeout(() => {
+        if (isLoading && !user) {
+          console.log('⏰ Profile fetch timeout, clearing token');
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+      }, 10000); // 10 seconds timeout
+
+      return () => clearTimeout(timeout);
+    }
+  }, [localToken, isLoading, user]);
 
   // Debug logging
   console.log('🔒 ProtectedRoute check:', { 
@@ -53,8 +68,10 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     );
   }
 
-  // Có token nhưng authentication failed -> redirect to login
-  if (localToken && !isAuthenticated && !isLoading) {
+  // Có token nhưng authentication failed -> clear token và redirect
+  if (localToken && !isAuthenticated && !isLoading && !user) {
+    console.log('🚨 Token expired/invalid, clearing and redirecting');
+    localStorage.removeItem('token');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
