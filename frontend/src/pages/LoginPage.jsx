@@ -184,44 +184,68 @@ const LoginPage = () => {
             </button>
           </form>
 
-          {/* Always show register/login toggle */}
-          <div className="login-links" style={{ 
-            marginTop: '20px', 
-            textAlign: 'center',
-            display: 'block !important',
-            visibility: 'visible !important'
-          }}>
-            <p style={{ marginBottom: '15px', color: '#666', fontSize: '14px' }}>
+          {/* DEBUG: Version check */}
+          <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', color: '#999' }}>
+            v2.0
+          </div>
+
+          {/* FORCED REGISTER BUTTON - ALWAYS VISIBLE */}
+          <div 
+            className="login-links" 
+            id="register-section"
+            style={{ 
+              marginTop: '20px', 
+              textAlign: 'center',
+              display: 'block !important',
+              visibility: 'visible !important',
+              opacity: '1 !important',
+              position: 'relative',
+              zIndex: '999',
+              backgroundColor: '#f8f9fa',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '2px solid #28a745'
+            }}
+          >
+            <p style={{ 
+              marginBottom: '15px', 
+              color: '#333', 
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}>
               {isRegister ? 'Đã có tài khoản?' : 'Chưa có tài khoản?'}
             </p>
             <button 
               type="button" 
               className="register-toggle-button" 
+              id="register-button"
               onClick={toggleMode}
               disabled={isLoading}
               style={{ 
-                background: '#28a745',
-                border: 'none',
+                background: '#dc3545',
+                border: '3px solid #dc3545',
                 color: 'white', 
-                padding: '12px 24px',
-                borderRadius: '8px',
+                padding: '15px 30px',
+                borderRadius: '10px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
-                fontSize: '16px',
+                fontSize: '18px',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                display: 'block !important'
+                boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                display: 'block !important',
+                width: '100%',
+                textTransform: 'uppercase'
               }}
               onMouseOver={(e) => {
-                e.target.style.background = '#218838';
-                e.target.style.transform = 'translateY(-1px)';
+                e.target.style.background = '#c82333';
+                e.target.style.transform = 'scale(1.05)';
               }}
               onMouseOut={(e) => {
-                e.target.style.background = '#28a745';
-                e.target.style.transform = 'translateY(0)';
+                e.target.style.background = '#dc3545';
+                e.target.style.transform = 'scale(1)';
               }}
             >
-              {isRegister ? '🔐 Đăng nhập ngay' : '📝 Đăng ký ngay'}
+              🚨 {isRegister ? 'ĐĂNG NHẬP NGAY' : 'ĐĂNG KÝ NGAY'} 🚨
             </button>
           </div>
 
