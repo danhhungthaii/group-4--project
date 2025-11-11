@@ -71,7 +71,7 @@ const ActivityLogsPage = () => {
       setLogs(mockLogs);
       setLoading(false);
     }, 1000);
-  }, []);
+  }, [mockLogs]);
 
   const filteredLogs = logs.filter(log => {
     if (filter === 'all') return true;
