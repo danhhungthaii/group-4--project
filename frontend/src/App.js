@@ -7,7 +7,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import store from './store';
-import { getUserProfile, selectIsAuthenticated } from './store/slices/authSlice';
+import { getUserProfile, selectIsAuthenticated, selectIsLoading } from './store/slices/authSlice';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -29,14 +29,33 @@ import './styles/redux-protected.css';
 const AppRouter = () => {
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const isLoading = useSelector(selectIsLoading);
   const token = localStorage.getItem('token');
 
   // Check authentication on app start
   useEffect(() => {
-    if (token && !isAuthenticated) {
+    if (token && !isAuthenticated && !isLoading) {
       dispatch(getUserProfile());
     }
-  }, [dispatch, token, isAuthenticated]);
+  }, [dispatch, token, isAuthenticated, isLoading]);
+
+  // Show loading while checking authentication
+  if (token && !isAuthenticated && isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}>
+        <div style={{ textAlign: 'center', color: 'white' }}>
+          <div className="spinner" style={{ margin: '0 auto 20px' }}></div>
+          <p>Đang kiểm tra đăng nhập...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Router>

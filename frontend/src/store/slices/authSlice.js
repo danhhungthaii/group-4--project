@@ -121,7 +121,7 @@ export const logoutUser = createAsyncThunk(
 const initialState = {
   user: null,
   token: localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token'), // true if token exists
+  isAuthenticated: false, // Will be set to true after successful profile fetch
   isLoading: false,
   error: null,
 };
