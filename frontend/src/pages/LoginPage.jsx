@@ -184,23 +184,37 @@ const LoginPage = () => {
             </button>
           </form>
 
-          <div className="login-links">
-            <p>
-              {isRegister ? 'Đã có tài khoản?' : 'Chưa có tài khoản?'}{' '}
-              <button 
-                type="button" 
-                className="link-button" 
-                onClick={toggleMode}
-                disabled={isLoading}
-                style={{ 
-                  color: '#007bff', 
-                  textDecoration: 'underline',
-                  fontWeight: 'bold'
-                }}
-              >
-                {isRegister ? '🔐 Đăng nhập ngay' : '📝 Đăng ký ngay'}
-              </button>
+          <div className="login-links" style={{ marginTop: '20px', textAlign: 'center' }}>
+            <p style={{ marginBottom: '10px', color: '#666' }}>
+              {isRegister ? 'Đã có tài khoản?' : 'Chưa có tài khoản?'}
             </p>
+            <button 
+              type="button" 
+              className="link-button" 
+              onClick={toggleMode}
+              disabled={isLoading}
+              style={{ 
+                background: 'none',
+                border: '2px solid #007bff',
+                color: '#007bff', 
+                padding: '10px 20px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.background = '#007bff';
+                e.target.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.background = 'none';
+                e.target.style.color = '#007bff';
+              }}
+            >
+              {isRegister ? '🔐 Đăng nhập ngay' : '📝 Đăng ký ngay'}
+            </button>
           </div>
 
           {!isRegister && (
