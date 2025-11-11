@@ -184,33 +184,41 @@ const LoginPage = () => {
             </button>
           </form>
 
-          <div className="login-links" style={{ marginTop: '20px', textAlign: 'center' }}>
-            <p style={{ marginBottom: '10px', color: '#666' }}>
+          {/* Always show register/login toggle */}
+          <div className="login-links" style={{ 
+            marginTop: '20px', 
+            textAlign: 'center',
+            display: 'block !important',
+            visibility: 'visible !important'
+          }}>
+            <p style={{ marginBottom: '15px', color: '#666', fontSize: '14px' }}>
               {isRegister ? 'Đã có tài khoản?' : 'Chưa có tài khoản?'}
             </p>
             <button 
               type="button" 
-              className="link-button" 
+              className="register-toggle-button" 
               onClick={toggleMode}
               disabled={isLoading}
               style={{ 
-                background: 'none',
-                border: '2px solid #007bff',
-                color: '#007bff', 
-                padding: '10px 20px',
+                background: '#28a745',
+                border: 'none',
+                color: 'white', 
+                padding: '12px 24px',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
-                fontSize: '14px',
-                transition: 'all 0.3s ease'
+                fontSize: '16px',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                display: 'block !important'
               }}
               onMouseOver={(e) => {
-                e.target.style.background = '#007bff';
-                e.target.style.color = 'white';
+                e.target.style.background = '#218838';
+                e.target.style.transform = 'translateY(-1px)';
               }}
               onMouseOut={(e) => {
-                e.target.style.background = 'none';
-                e.target.style.color = '#007bff';
+                e.target.style.background = '#28a745';
+                e.target.style.transform = 'translateY(0)';
               }}
             >
               {isRegister ? '🔐 Đăng nhập ngay' : '📝 Đăng ký ngay'}
