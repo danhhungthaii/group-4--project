@@ -11,7 +11,6 @@ import {
   registerUser, 
   selectIsLoading, 
   selectError, 
-  selectIsAuthenticated,
   clearError 
 } from '../store/slices/authSlice';
 
@@ -22,8 +21,6 @@ const LoginPage = () => {
   
   const isLoading = useSelector(selectIsLoading);
   const error = useSelector(selectError);
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  
   const [isRegister, setIsRegister] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -31,14 +28,6 @@ const LoginPage = () => {
     name: '',
     confirmPassword: ''
   });
-
-  // Redirect nếu đã đăng nhập
-  useEffect(() => {
-    if (isAuthenticated) {
-      const from = location.state?.from?.pathname || '/profile';
-      navigate(from, { replace: true });
-    }
-  }, [isAuthenticated, navigate, location]);
 
   // Clear error khi component unmount
   useEffect(() => {
@@ -77,14 +66,25 @@ const LoginPage = () => {
         email: formData.email,
         password: formData.password
       };
-      await dispatch(registerUser(registerData));
+      const result = await dispatch(registerUser(registerData));
+      
+      // Redirect on successful registration
+      if (result.type === 'auth/registerUser/fulfilled') {
+        navigate('/profile', { replace: true });
+      }
     } else {
       // Login
       if (formData.email && formData.password) {
-        await dispatch(loginUser({
+        const result = await dispatch(loginUser({
           email: formData.email,
           password: formData.password
         }));
+        
+        // Redirect on successful login
+        if (result.type === 'auth/loginUser/fulfilled') {
+          const from = location.state?.from?.pathname || '/profile';
+          navigate(from, { replace: true });
+        }
       }
     }
   };
