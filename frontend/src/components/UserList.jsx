@@ -5,7 +5,7 @@ function UserList() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:3000/users")
+    axios.get("https://group4-backend-api.onrender.com/users")
       .then(res => setUsers(res.data))
       .catch(err => console.error(err));
   }, []);

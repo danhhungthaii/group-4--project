@@ -35,7 +35,7 @@ const RBACDemo = () => {
   };
 
   // Change API URL for RBAC server (use env var on Vercel)
-  const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
+  const API_URL = process.env.REACT_APP_API_BASE_URL || 'https://group4-backend-api.onrender.com';
 
   useEffect(() => {
     if (authService.isAuthenticated()) {

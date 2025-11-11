@@ -10,7 +10,7 @@ function AddUser() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    axios.post("http://localhost:3000/users", newUser)
+    axios.post("https://group4-backend-api.onrender.com/users", newUser)
       .then(res => {
         alert("Thêm user thành công!");
         setNewUser({ name: "", email: "" });

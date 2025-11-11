@@ -112,15 +112,19 @@ const AppRouter = () => {
             } 
           />
           
-          {/* Default redirect */}
+          {/* Home Route - Always show login/welcome page */}
           <Route 
             path="/" 
+            element={<HomePage />} 
+          />
+          
+          {/* Default route for authenticated users */}
+          <Route 
+            path="/dashboard" 
             element={
-              isAuthenticated ? (
-                <Navigate to="/profile" replace />
-              ) : (
-                <HomePage />
-              )
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
             } 
           />
           
