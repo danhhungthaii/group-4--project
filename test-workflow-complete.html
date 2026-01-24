@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Forgot Password Workflow</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .token-display {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Forgot Password Workflow Test</h1>
+        <p>Test complete workflow: Request → Email → Token → Reset</p>
+
+        <!-- Test Step 1 -->
+        <div class="test-section">
+            <h3>📧 Step 1: Request Password Reset</h3>
+            <button class="test-button" onclick="testForgotPassword()">Send Forgot Password Request</button>
+            <div id="step1-log" class="log"></div>
+        </div>
+
+        <!-- Test Step 2 -->
+        <div class="test-section">
+            <h3>📬 Step 2: Check Sent Email</h3>
+            <button class="test-button" onclick="checkLastEmail()">Get Last Email & Token</button>
+            <div id="step2-log" class="log"></div>
+            <div id="token-display" class="token-display" style="display: none;"></div>
+        </div>
+
+        <!-- Test Step 3 -->
+        <div class="test-section">
+            <h3>🔒 Step 3: Reset Password</h3>
+            <input type="password" id="newPassword" placeholder="New Password" value="NewPassword123!" style="padding: 8px; margin: 5px;">
+            <button class="test-button" onclick="testResetPassword()">Reset Password</button>
+            <div id="step3-log" class="log"></div>
+        </div>
+
+        <!-- Full Test -->
+        <div class="test-section">
+            <h3>🚀 Complete Workflow Test</h3>
+            <button class="test-button" onclick="runFullTest()" style="background: #28a745;">Run Full Test</button>
+            <div id="full-test-log" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentResetToken = null;
+        const API_BASE = 'http://localhost:5001/api';
+
+        function log(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const logClass = isError ? 'error' : 'success';
+            element.innerHTML += `<div class="${logClass}">[${timestamp}] ${message}</div>`;
+            element.scrollTop = element.scrollHeight;
+        }
+
+        async function testForgotPassword() {
+            const logId = 'step1-log';
+            document.getElementById(logId).innerHTML = '';
+            
+            try {
+                log(logId, '📧 Sending forgot password request...');
+                
+                const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    log(logId, '✅ Forgot password request successful!');
+                    log(logId, `📧 Email sent to: test@example.com`);
+                    currentResetToken = result.resetToken;
+                    if (currentResetToken) {
+                        log(logId, `🔑 Reset token: ${currentResetToken.substring(0, 20)}...`);
+                    }
+                } else {
+                    log(logId, `❌ Failed: ${result.message}`, true);
+                }
+            } catch (error) {
+                log(logId, `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function checkLastEmail() {
+            const logId = 'step2-log';
+            document.getElementById(logId).innerHTML = '';
+            
+            try {
+                log(logId, '📬 Checking last sent email...');
+                
+                const response = await fetch(`${API_BASE}/test/last-email`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    log(logId, '✅ Email found!');
+                    log(logId, `📧 To: ${result.email.to}`);
+                    log(logId, `📬 Subject: ${result.email.subject}`);
+                    
+                    if (result.resetToken) {
+                        currentResetToken = result.resetToken;
+                        log(logId, `🔑 Reset token extracted successfully`);
+                        
+                        const tokenDisplay = document.getElementById('token-display');
+                        tokenDisplay.innerHTML = `<strong>Reset Token:</strong><br>${result.resetToken}`;
+                        tokenDisplay.style.display = 'block';
+                    }
+                } else {
+                    log(logId, `❌ No email found: ${result.message}`, true);
+                }
+            } catch (error) {
+                log(logId, `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function testResetPassword() {
+            const logId = 'step3-log';
+            document.getElementById(logId).innerHTML = '';
+            
+            if (!currentResetToken) {
+                log(logId, '❌ No reset token available. Run Step 1 and 2 first.', true);
+                return;
+            }
+
+            try {
+                const newPassword = document.getElementById('newPassword').value;
+                
+                if (!newPassword) {
+                    log(logId, '❌ Please enter a new password', true);
+                    return;
+                }
+
+                log(logId, '🔒 Attempting password reset...');
+                
+                const response = await fetch(`${API_BASE}/auth/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token: currentResetToken,
+                        newPassword: newPassword
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    log(logId, '✅ Password reset successful!');
+                    log(logId, '🎉 New password has been set');
+                } else {
+                    log(logId, `❌ Reset failed: ${result.message}`, true);
+                }
+            } catch (error) {
+                log(logId, `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function runFullTest() {
+            const logId = 'full-test-log';
+            document.getElementById(logId).innerHTML = '';
+            
+            log(logId, '🚀 Starting complete workflow test...');
+            
+            try {
+                // Step 1: Forgot password
+                log(logId, '📧 Step 1: Requesting password reset...');
+                await testForgotPassword();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 2: Check email
+                log(logId, '📬 Step 2: Checking sent email...');
+                await checkLastEmail();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 3: Reset password
+                if (currentResetToken) {
+                    log(logId, '🔒 Step 3: Resetting password...');
+                    await testResetPassword();
+                    
+                    log(logId, '🎉 COMPLETE WORKFLOW TEST PASSED!');
+                    log(logId, '✅ All steps completed successfully');
+                } else {
+                    log(logId, '❌ Workflow failed - no reset token available', true);
+                }
+                
+            } catch (error) {
+                log(logId, `❌ Workflow failed: ${error.message}`, true);
+            }
+        }
+
+        // Auto-run full test when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('full-test-log', '🔄 Auto-running full workflow test...');
+                runFullTest();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

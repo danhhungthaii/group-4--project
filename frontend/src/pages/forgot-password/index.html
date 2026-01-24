@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quên Mật Khẩu - Group 4 Project | SV2</title>
+    <link rel="stylesheet" href="../../styles/forgot-password.css">
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🔐</div>
+        
+        <h1>Quên Mật Khẩu</h1>
+        <p class="subtitle">
+            Nhập địa chỉ email của bạn và chúng tôi sẽ gửi liên kết đặt lại mật khẩu
+        </p>
+
+        <div id="message" class="message"></div>
+
+        <form id="forgotPasswordForm">
+            <div class="form-group">
+                <label for="email">Địa chỉ Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required 
+                    placeholder="Nhập email của bạn"
+                    autocomplete="email"
+                >
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">
+                Gửi Liên Kết Đặt Lại
+            </button>
+        </form>
+
+        <a href="../auth/login.html" class="back-link">← Quay lại đăng nhập</a>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🔒</div>
+                <span>Liên kết an toàn với mã hóa token</span>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">⏰</div>
+                <span>Liên kết có hiệu lực trong 1 giờ</span>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📧</div>
+                <span>Email gửi tức thì đến hộp thư</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../scripts/forgot-password.js"></script>
+</body>
+</html>
